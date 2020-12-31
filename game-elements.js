@@ -142,6 +142,9 @@
 		},
 	};
 
+	root.GameEffects = {
+		nebula: new Option('Nebula', '+1 to defender\'s space combat rolls.', 'defender'),
+	};
 	root.UnitInfo = (function () {
 
 		function UnitInfo(type, stats) {

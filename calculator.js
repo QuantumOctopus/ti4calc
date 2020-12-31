@@ -875,6 +875,13 @@
 						return battleType === game.BattleType.Ground && opponentOptions.tekklarLegion && sideOptions.race === game.Race.Sardakk ? -1 : 0;
 					}
 				},
+				{
+					name: 'nebula',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions) {
+						return sideOptions.nebula ? 1 : 0;
+					}
+				},
 			];
 		}
 
