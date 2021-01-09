@@ -879,7 +879,7 @@
 					name: 'nebula',
 					firstRoundOnly: false,
 					apply: function (battleType, sideOptions) {
-						return sideOptions.nebula ? 1 : 0;
+						return battleType === game.BattleType.Space && sideOptions.nebula ? 1 : 0;
 					}
 				},
 			];
