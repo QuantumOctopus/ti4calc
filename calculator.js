@@ -434,9 +434,9 @@
 					execute: function (problemArray, attackerFull, defenderFull, options) {
 						var result = [];
 						var attackerVirusFlagship = options.attacker.race === game.Race.Virus &&
-							attackerFull.some(unitIs(game.UnitType.Flagship)) && attackerFull.some(unitIs(game.UnitType.Ground));
+							attackerFull.some(unitIs(game.UnitType.Flagship)) && attackerFull.some(unitIs(game.UnitType.Infantry));
 						var defenderVirusFlagship = options.defender.race === game.Race.Virus &&
-							defenderFull.some(unitIs(game.UnitType.Flagship)) && defenderFull.some(unitIs(game.UnitType.Ground));
+							defenderFull.some(unitIs(game.UnitType.Flagship)) && defenderFull.some(unitIs(game.UnitType.Infantry));
 
 						problemArray.forEach(function (problem) {
 							var attackerTransitionsVector = getSpaceCannonTransitionsVector(attackerFull, options.attacker, options.defender);
@@ -498,7 +498,7 @@
 						function gravitonLaserVictims(fleet, index, hits, thisSideOptions, opposingSideOptions) {
 							if (hits === 0 || index === 0)
 								return structs.Victim.Null;
-							if (!opposingSideOptions.gravitonLaser && !thisSideOptions.nonEuclidean && !fleet.some(unitIs(game.UnitType.Ground))) {
+							if (!opposingSideOptions.gravitonLaser && !thisSideOptions.nonEuclidean && !fleet.some(unitIs(game.UnitType.Infantry))) {
 								var result = new structs.Victim();
 								result._dead = Math.min(hits, fleet.map(absorbsHits).reduce(sum));
 								return result;
@@ -511,7 +511,7 @@
 								var unit = fleet[i];
 								if (unit.type === game.UnitType.Fighter && opposingSideOptions.gravitonLaser) {
 									currentRange = null;
-								} else if (unit.type === game.UnitType.Ground) {
+								} else if (unit.type === game.UnitType.Infantry) {
 									currentRange = null;
 								} else {
 									if (currentRange === null) {
@@ -750,7 +750,7 @@
 					},
 				},
 				{
-					name: 'Space Cannon -> Ground Forces',
+					name: 'Space Cannon -> Infantry',
 					appliesTo: game.BattleType.Ground,
 					execute: function (problemArray, attackerFull, defenderFull, options) {
 						problemArray.forEach(function (problem) {
@@ -882,6 +882,63 @@
 						return battleType === game.BattleType.Space && sideOptions.nebula ? 1 : 0;
 					}
 				},
+				{
+					name: 'iconoclast',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions) {
+						return battleType === game.BattleType.Ground && sideOptions.iconoclast ?
+							function (unit) {
+								return unit.type === game.UnitType.Mech ? 2 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'mordred',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions) {
+						return sideOptions.mordred ?
+							function (unit) {
+								return unit.type === game.UnitType.Mech ? 2 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'rickar',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions) {
+						return sideOptions.rickar ? 2 : 0;
+					}
+				},
+				{
+					name: 'Shield Paling',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions, opponentOptions, fleet) {
+						// Unit reordering, where the Flagship is not the first is not taken into account
+						// Several Flagships not taken into account
+						return sideOptions.race === game.Race.JolNar && battleType === game.BattleType.Ground &&
+						fleet.some(unitIs(game.UnitType.Mech)) ?
+							function (unit) {
+								return unit.type == game.UnitType.Infantry ? 1 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'needOpponentToken',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions) {
+						return sideOptions.race === game.Race.Mahact && battleType === game.BattleType.Space && sideOptions.needOpponentToken ?
+							function (unit) {
+								return unit.type === game.UnitType.Flagship ? 2 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'superCharge',
+					firstRoundOnly: true,
+					apply: function (battleType, sideOptions) {
+						return sideOptions.superCharge ? 1 : 0;
+					}
+				},
 			];
 		}
 
@@ -900,6 +957,7 @@
 				!defenderFull.some(unitIs(game.UnitType.PDS)) // either there are no defending PDS
 				|| attackerFull.some(unitIs(game.UnitType.WarSun)) // or there are but attacking WarSuns negate their Planetary Shield
 				|| options.attacker.race === game.Race.Letnev && attackerFull.some(unitIs(game.UnitType.Flagship)) // Letnev Flagship negates Planetary Shield as well
+				|| options.attacker.twoRam
 			);
 			if (!bombardmentPossible) return [1];
 
@@ -1081,7 +1139,7 @@
 		}
 
 		function notFighterNorGroundForceShip(unit) {
-			return unit.type !== game.UnitType.Fighter && unit.type !== game.UnitType.Ground && !unit.isDamageGhost;
+			return unit.type !== game.UnitType.Fighter && unit.type !== game.UnitType.Infantry && !unit.isDamageGhost;
 		}
 
 		function findLastIndex(array, predicate) {

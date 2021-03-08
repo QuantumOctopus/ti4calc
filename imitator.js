@@ -400,7 +400,7 @@
 						}
 
 						function notGroundForce(unit) {
-							return /*because Virus Flagship*/ unit.type !== game.UnitType.Ground;
+							return /*because Virus Flagship*/ unit.type !== game.UnitType.Infantry;
 						}
 
 						function markDamagedNotThisRound(fleet) {
@@ -529,7 +529,7 @@
 					},
 				},
 				{
-					name: 'Space Cannon -> Ground Forces',
+					name: 'Space Cannon -> Infantry',
 					appliesTo: game.BattleType.Ground,
 					execute: function (attacker, defender, attackerFull, defenderFull, options) {
 						if (options.attacker.l4Disruptors) return;
@@ -674,7 +674,7 @@
 		}
 
 		function notFighterNorGroundForceShip(unit) {
-			return unit.type !== game.UnitType.Fighter && unit.type !== game.UnitType.Ground && !unit.isDamageGhost;
+			return unit.type !== game.UnitType.Fighter && unit.type !== game.UnitType.Infantry && !unit.isDamageGhost;
 		}
 
 		function sum(a, b) {

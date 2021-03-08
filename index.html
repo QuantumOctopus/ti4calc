@@ -48,7 +48,7 @@
 		</select>
 	</div>
 	<div id="counters">
-		<div class="o-grid o-grid--no-gutter center-grid" v-for="(name, key) in UnitType"
+ 		<div class="o-grid o-grid--no-gutter center-grid" v-for="(name, key) in UnitType"
 			 :class="{ 'attacker-participates': participates(BattleSide.attacker, name),
 						'defender-participates': participates(BattleSide.defender, name) }">
 			<div class="o-grid__cell counter c-input-group attacker">
@@ -159,10 +159,14 @@
 		<option-pair v-for="(option, key) in GameEffects"
 					:option-name="key" :option="option" :options="options"></option-pair>
 		<div class="heading"><strong>Technologies</strong></div>
-		<option-pair v-for="pair in raceTechnologies" :pair="pair" :options="options"></option-pair>
 		<option-pair v-for="technology in technologies"
 					:option-name="technology.key" :option="technology.option" :pair="technology.pair" :options="options" :visible="technology.key !== 'hasDock' || !!options.defender.magenDefenseOmega"></option-pair>
 		<option-pair v-for="pair in raceTechnologies" :pair="pair" :options="options"></option-pair>
+		<div class="heading"><strong>Faction Bonuses</strong></div>
+		<option-pair v-for="pair in factionEffects" :pair="pair" :options="options"></option-pair>
+		<div class="heading"><strong>Leaders</strong></div>
+		<option-pair v-for="(option, key) in Leaders"
+					:option-name="key" :option="option" :options="options"></option-pair>
 		<div class="heading"><strong>Action Cards</strong></div>
 		<option-pair v-for="(option, key) in ActionCards"
 						:option-name="key" :option="option" :options="options"></option-pair>
@@ -221,8 +225,8 @@
 				<td>Fighter</td>
 			</tr>
 			<tr>
-				<td class="letter">G</td>
-				<td>Ground Force</td>
+				<td class="letter">I</td>
+				<td>Infantry</td>
 			</tr>
 			<tr>
 				<td class="letter">=</td>

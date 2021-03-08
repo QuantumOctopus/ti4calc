@@ -31,7 +31,8 @@
 		Carrier: 'Carrier',
 		Destroyer: 'Destroyer',
 		Fighter: 'Fighter',
-		Ground: 'Ground',
+		Infantry: 'Infantry',
+		Mech: 'Mech',
 		PDS: 'PDS',
 	};
 
@@ -45,7 +46,8 @@
 		Destroyer: '+',
 		Carrier: 'V',
 		Fighter: 'F',
-		Ground: 'G',
+		Infantry: 'I',
+		Mech: 'M',
 		PDS: 'P',
 	};
 
@@ -67,6 +69,13 @@
 		Xxcha: 'Xxcha',
 		Yin: 'Yin',
 		Yssaril: 'Yssaril',
+		Argent: 'Argent',
+		Cabal: 'Cabal',
+		Empyrean: 'Empyrean',
+		Mahact: 'Mahact',
+		NaazRokha: 'Naaz-Rokha',
+		Nomad: 'Nomad',
+		Titans: 'Titans',
 	};
 
 	root.RacesDisplayNames = {
@@ -87,6 +96,13 @@
 		Xxcha: 'Xxcha',
 		Yin: 'Yin',
 		Yssaril: 'Yssaril',
+		Argent: 'Argent',
+		Cabal: 'Cabal',
+		Empyrean: 'Empyrean',
+		Mahact: 'Mahact',
+		NaazRokha: 'Naaz-Rokha',
+		Nomad: 'Nomad',
+		Titans: 'Titans',
 	};
 
 	function Option(title, description, limitedTo) {
@@ -130,6 +146,9 @@
 	root.Promissory = {
 		letnevMunitionsFunding: new Option('Munitions Reserves / War Funding 1st round', 'Reroll dice during first space combat round'),
 		tekklarLegion: new Option('Tekklar Legion', '+1 in invasion combat. -1 to Sardakk if he\'s the opponent'),
+		strikeWingAmbuscade: new Option('Strike Wing Ambuscade', 'Additional die on unit ability'),
+		cavalryI: new Option('The Cavalry (Memoria I)', 'Adds the Memoria I to the combat (omit replaced unit)'),
+		cavalryII: new Option('The Cavalry (Memoria II)', 'Adds the Memoria II to the combat (omit replaced unit)'),
 	};
 
 	root.RaceSpecificTechnologies = {
@@ -140,11 +159,36 @@
 		Sardakk: {
 			valkyrieParticleWeave: new Option('Valkyrie Particle Weave', 'If opponent produces at least one hit in Ground combat, you produce one additional hit'),
 		},
+		NaazRokha: {
+			superCharge: new Option('Supercharge 1st round', '+1 dice modifer to all units during the first battle round'),
+		},
 	};
+
+	root.FactionEffects = {
+		Naalu: {
+			iconoclast: new Option('Opponent has Relic Fragment', 'Gives +2 to mech combat rolls'),
+		},
+		Virus: {
+			mordred: new Option('Copied Faction Tech', 'Gives +2 to mech combat rolls'),
+		},
+		Mahact: {
+			needOpponentToken: new Option('Missing Opponent Token', 'Gives +2 to flagship combat rolls'),
+		},
+	}
 
 	root.GameEffects = {
 		nebula: new Option('Nebula', '+1 to defender\'s space combat rolls.', 'defender'),
 	};
+
+	root.Leaders = {
+		trrakanAunZulok: new Option('Trrakan Aun Zulok', '+1 die to unit ability'),
+		viscountUnlenn: new Option('Viscount Unlenn', '+1 die to a ship during first round of space combat'),
+		taZern: new Option('Ta Zern', 'Reroll missed ability roll dice'),
+		twoRam: new Option('2Ram', 'Ignores Planetary Shield'),
+		rickar: new Option('Rickar Rickani', 'Adds +2 to combat rolls'),
+		geoform: new Option('Geoform PDS', 'Additional unit with Space Cannon 5(x3)'),
+	}
+
 	root.UnitInfo = (function () {
 
 		function UnitInfo(type, stats) {
@@ -255,9 +299,14 @@
 			spaceCannonValue: 6,
 			spaceCannonDice: 1,
 		}),
-		Ground: new root.UnitInfo(UnitType.Ground, {
+		Infantry: new root.UnitInfo(UnitType.Infantry, {
 			battleValue: 8,
 			cost: 0.5,
+		}),
+		Mech: new root.UnitInfo(UnitType.Mech, {
+			sustainDamageHits: 1,
+			battleValue: 6,
+			cost: 2,
 		}),
 		ExperimentalBattlestation: new root.UnitInfo('Bloodthirsty Space Dock', {
 			spaceCannonValue: 5,
@@ -310,6 +359,15 @@
 				race: root.Race.Xxcha,
 				cost: 8,
 			}),
+			Mech: new root.UnitInfo(UnitType.Mech, {
+				sustainDamageHits: 1,
+				battleValue: 6,
+				battleDice: 1,
+				spaceCannonValue: 8,
+				spaceCannonDice: 1,
+				cost: 2,
+				race: root.Race.Xxcha,
+		}),
 		},
 		Yin: {
 			Flagship: new root.UnitInfo(UnitType.Flagship, {
@@ -337,7 +395,7 @@
 				race: root.Race.Sol,
 				cost: 8,
 			}),
-			Ground: new root.UnitInfo(UnitType.Ground, {
+			Infantry: new root.UnitInfo(UnitType.Infantry, {
 				battleValue: 7,
 				cost: 0.5,
 			}),
@@ -359,6 +417,13 @@
 				race: root.Race.L1Z1X,
 				cost: 8,
 			}),
+			Mech: new root.UnitInfo(UnitType.Mech, {
+				sustainDamageHits: 1,
+				bombardmentValue: 8,
+				bombardmentDice: 1,
+				battleValue: 6,
+				cost: 2,
+		}),
 		},
 		Mentak: {
 			Flagship: new root.UnitInfo(UnitType.Flagship, {
@@ -440,6 +505,97 @@
 				cost: 8,
 			}),
 		},
+		Argent: {
+			Flagship: new root.UnitInfo(UnitType.Flagship, {
+				sustainDamageHits: 1,
+				battleValue: 7,
+				battleDice: 2,
+				race: root.Race.Argent,
+				cost: 8,
+			}),
+			Destroyer: new root.UnitInfo(UnitType.Destroyer, {
+				battleValue: 8,
+				barrageValue: 9,
+				barrageDice: 2,
+				cost: 1,
+			}),
+		},
+		Cabal: {
+			Flagship: new root.UnitInfo(UnitType.Flagship, {
+				sustainDamageHits: 1,
+				battleValue: 5,
+				battleDice: 2,
+				race: root.Race.Cabal,
+				cost: 8,
+			}),
+		},
+		Empyrean: {
+			Flagship: new root.UnitInfo(UnitType.Flagship, {
+				sustainDamageHits: 1,
+				battleValue: 5,
+				battleDice: 2,
+				race: root.Race.Empyrean,
+				cost: 8,
+			}),
+		},
+		Mahact: {
+			Flagship: new root.UnitInfo(UnitType.Flagship, {
+				sustainDamageHits: 1,
+				battleValue: 5,
+				battleDice: 2,
+				race: root.Race.Mahact,
+				cost: 8,
+			}),
+		},
+		NaazRokha: {
+			Flagship: new root.UnitInfo(UnitType.Flagship, {
+				sustainDamageHits: 1,
+				battleValue: 9,
+				battleDice: 2,
+				race: root.Race.NaazRokha,
+				cost: 8,
+			}),
+			Mech: new root.UnitInfo(UnitType.Mech, {
+				sustainDamageHits: 1,
+				battleValue: 6,
+				battleDice: 2,
+				cost: 2,
+				race: root.Race.NaazRokha,
+		}),
+		},
+		Nomad: {
+			Flagship: new root.UnitInfo(UnitType.Flagship, {
+				sustainDamageHits: 1,
+				barrageValue: 8,
+				barrageDice: 3,
+				battleValue: 7,
+				battleDice: 2,
+				race: root.Race.Nomad,
+				cost: 8,
+			}),
+		},
+		Titans: {
+			Flagship: new root.UnitInfo(UnitType.Flagship, {
+				sustainDamageHits: 1,
+				battleValue: 7,
+				battleDice: 2,
+				race: root.Race.Titans,
+				cost: 8,
+			}),
+			Cruiser: new root.UnitInfo(UnitType.Cruiser, {
+				battleValue: 7,
+				cost: 2,
+				race: root.Race.Titans,
+			}),
+			PDS: new root.UnitInfo(UnitType.PDS, {
+				sustainDamageHits: 1,
+				spaceCannonValue: 6,
+				spaceCannonDice: 1,
+				battleValue: 7,
+				battleDice: 1,
+				race: root.Race.Titans,
+			})
+		},
 	};
 
 	root.StandardUpgrades = {
@@ -469,7 +625,7 @@
 			spaceCannonValue: 5,
 			spaceCannonDice: 1,
 		}),
-		Ground: new root.UnitInfo(UnitType.Ground, {
+		Infantry: new root.UnitInfo(UnitType.Infantry, {
 			battleValue: 7,
 			cost: 0.5,
 		}),
@@ -482,7 +638,7 @@
 				battleValue: 9,
 				cost: 3,
 			}),
-			Ground: new root.UnitInfo(UnitType.Ground, {
+			Infantry: new root.UnitInfo(UnitType.Infantry, {
 				battleValue: 6,
 				cost: 0.5,
 			}),
@@ -512,6 +668,40 @@
 				cost: 10,
 			}),
 		},
+		Argent: {
+			Destroyer: new root.UnitInfo(UnitType.Destroyer, {
+				battleValue: 7,
+				barrageValue: 6,
+				barrageDice: 3,
+				cost: 1,
+			}),
+		},
+		// Nomad: {
+		// 	Flagship: new root.UnitInfo(UnitType.Flagship, {
+		// 		sustainDamageHits: 1,
+		// 		barrageValue: 5,
+		// 		barrageDice: 3,
+		// 		battleValue: 5,
+		// 		battleDice: 2,
+		// 		race: root.Race.Nomad,
+		// 		cost: 8,
+		// 	}),
+		Titans: {
+			Cruiser: new root.UnitInfo(UnitType.Cruiser, {
+				sustainDamageHits: 1,
+				battleValue: 6,
+				cost: 2,
+				race: root.Race.Titans,
+			}),
+			PDS: new root.UnitInfo(UnitType.PDS, {
+				sustainDamageHits: 1,
+				spaceCannonValue: 5,
+				spaceCannonDice: 1,
+				battleValue: 6,
+				battleDice: 1,
+				race: root.Race.Titans,
+			})
+		},
 	};
 
 	root.MergedUnits = {};
@@ -535,6 +725,8 @@
 
 		var opponentMentakFlagship = battleType === root.BattleType.Space && opponentSideOptions.race === root.Race.Mentak &&
 			(input[root.SideUnits[opponentSide]][UnitType.Flagship] || { count: 0 }).count !== 0;
+		var opponentMentakMech = battleType === root.BattleType.Ground && opponentSideOptions.race === root.Race.Mentak &&
+			(input[root.SideUnits[opponentSide]][UnitType.Mech] || { count: 0 }).count !== 0;
 
 		var result = [];
 		var thisSideCounters = input[root.SideUnits[battleSide]];
@@ -544,27 +736,39 @@
 				var unit = (counter.upgraded ? upgradedUnits : standardUnits)[unitType];
 				var addedUnit = unit.clone();
 				result.push(addedUnit);
-				if (unit.sustainDamageHits > 0 &&
-					!opponentMentakFlagship &&
-					!(unitType === UnitType.WarSun && thisSideOptions.publicizeSchematics)
-				) {
-					if (i < counter.count - (counter.damaged || 0))
-						result.push(addedUnit.toDamageGhost());
-					else
-						addedUnit.damaged = true;
+				if (battleType === root.BattleType.Space){
+					if (unit.sustainDamageHits > 0 &&
+						!opponentMentakFlagship &&
+						!(unitType === UnitType.WarSun && thisSideOptions.publicizeSchematics)
+					) {
+						if (i < counter.count - (counter.damaged || 0))
+							result.push(addedUnit.toDamageGhost());
+						else
+							addedUnit.damaged = true;
+					}
+				} else {
+					if (unit.sustainDamageHits > 0 && !opponentMentakMech) {
+						if (i < counter.count - (counter.damaged || 0))
+							result.push(addedUnit.toDamageGhost());
+						else
+							addedUnit.damaged = true;
+					}
 				}
 			}
 		}
 
 		var ships = createShips();
+		var groundForces = createGroundForces();
 		var virusFlagship = battleType === root.BattleType.Space && thisSideOptions.race === root.Race.Virus &&
 			(thisSideCounters[UnitType.Flagship] || { count: 0 }).count !== 0;
 		var naaluFlagship = battleType === root.BattleType.Ground && thisSideOptions.race === root.Race.Naalu &&
 			(thisSideCounters[UnitType.Flagship] || { count: 0 }).count !== 0;
+		var helTitan = battleType === root.BattleType.Ground && thisSideOptions.race === root.Race.Titans &&
+			(thisSideCounters[UnitType.PDS] || { count: 0 }).count !== 0;
 
 		var unitOrder = createUnitOrder(virusFlagship);
 		var naaluGoundUnitOrder = {};
-		naaluGoundUnitOrder[UnitType.Ground] = 1;
+		naaluGoundUnitOrder[UnitType.Infantry] = 1;
 		naaluGoundUnitOrder[UnitType.Fighter] = 2;
 		var comparer;
 		var vipGround;
@@ -572,8 +776,8 @@
 			// in case Fighters are stronger than Ground Forces, I'd like Ground Forces to die first, then sacrifice the
 			// Fighters. But, Fighters cannot take control of the planet, so I'd like to save one Ground Force
 			vipGround = (thisSideCounters[UnitType.Fighter] || {}).upgraded &&
-				!(thisSideCounters[UnitType.Ground] || {}).upgraded &&
-				result.find(function (unit) { return unit.type === UnitType.Ground; });
+				!(thisSideCounters[UnitType.Infantry] || {}).upgraded &&
+				result.find(function (unit) { return unit.type === UnitType.Infantry; });
 			comparer = naaluComparer;
 		} else if ((thisSideCounters[UnitType.Dreadnought] || {}).upgraded)
 			comparer = upgradedDreadnoughtsComparer;
@@ -581,6 +785,8 @@
 			comparer = defaultComparer;
 		result.sort(comparer);
 		if (battleType === root.BattleType.Space && thisSideOptions.experimentalBattlestation)
+			result.push(root.StandardUnits.ExperimentalBattlestation);
+		if (thisSideOptions.geoform)
 			result.push(root.StandardUnits.ExperimentalBattlestation);
 		result.comparer = comparer;
 		result.filterForBattle = filterFleet;
@@ -598,6 +804,13 @@
 			];
 		}
 
+		function createGroundForces() {
+			return [
+				UnitType.Mech,
+				UnitType.Infantry,
+			];
+		}
+
 		function createUnitOrder(virus) {
 			var result = [];
 			var i = 0;
@@ -605,8 +818,8 @@
 				result[unitType] = i++;
 			}
 			if (virus) {
-				var tmp = result[UnitType.Ground]; // Virus will need Grounds to die after Fighters, as they are stronger
-				result[UnitType.Ground] = result[UnitType.Fighter];
+				var tmp = result[UnitType.Infantry]; // Virus will need Grounds to die after Fighters, as they are stronger
+				result[UnitType.Infantry] = result[UnitType.Fighter];
 				result[UnitType.Fighter] = tmp;
 			}
 			return result;
@@ -670,9 +883,9 @@
 		function filterFleet() {
 			var result = this.filter(function (unit) {
 				if (battleType === root.BattleType.Space)
-					return ships.indexOf(unit.type) >= 0 || virusFlagship && unit.type === root.UnitType.Ground;
+					return ships.indexOf(unit.type) >= 0 || virusFlagship && groundForces.indexOf(unit.type) >= 0;
 				else //battleType === root.BattleType.Ground
-					return unit.type === UnitType.Ground || naaluFlagship && unit.type === root.UnitType.Fighter;
+					return groundForces.indexOf(unit.type) >= 0 || helTitan && unit.type === root.UnitType.PDS || naaluFlagship && unit.type === root.UnitType.Fighter;
 			});
 			result.comparer = this.comparer;
 			return result;
