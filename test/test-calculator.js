@@ -123,7 +123,7 @@ exports.expansionDefault = function (test) {
 	fleet[unit.Cruiser] = { count: 1 };
 	fleet[unit.Carrier] = { count: 1 };
 	fleet[unit.Destroyer] = { count: 1 };
-	fleet[unit.Ground] = { count: 1 };
+	fleet[unit.Infantry] = { count: 1 };
 	fleet[unit.Fighter] = { count: 1 };
 	fleet[unit.PDS] = { count: 1 };
 	var expansion = game.expandFleet(new Input(fleet, null, game.BattleType.Space, {
@@ -140,7 +140,7 @@ exports.expansionDefault = function (test) {
 		units[unit.Carrier],
 		units[unit.Destroyer],
 		units[unit.Fighter],
-		units[unit.Ground],
+		units[unit.Infantry],
 		units[unit.PDS],
 		units[unit.Flagship].toDamageGhost(),
 		units[unit.WarSun].toDamageGhost(),
@@ -302,7 +302,7 @@ exports.expansionAndFilterVirusFlagship = function (test) {
 	var attacker = {};
 	attacker[game.UnitType.Flagship] = { count: 1 };
 	attacker[game.UnitType.Fighter] = { count: 2 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
 	var options = { attacker: { race: game.Race.Virus }, };
 	var filteredFleet = game.expandFleet(new Input(attacker, null, game.BattleType.Space, options), game.BattleSide.attacker).filterForBattle();
@@ -310,8 +310,8 @@ exports.expansionAndFilterVirusFlagship = function (test) {
 	var u = game.UnitType;
 	var expected = [
 		game.RaceSpecificUnits[game.Race.Virus][u.Flagship],
-		game.StandardUnits[u.Ground],
-		game.StandardUnits[u.Ground],
+		game.StandardUnits[u.Infantry],
+		game.StandardUnits[u.Infantry],
 		game.StandardUnits[u.Fighter],
 		game.StandardUnits[u.Fighter],
 		game.RaceSpecificUnits[game.Race.Virus][u.Flagship].toDamageGhost(),
@@ -324,17 +324,17 @@ exports.expansionAndFilterNaaluFlagshipFightersBetter = function (test) {
 	var attacker = {};
 	attacker[game.UnitType.Flagship] = { count: 1 };
 	attacker[game.UnitType.Fighter] = { count: 2, upgraded: true };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
 	var options = { attacker: { race: game.Race.Naalu }, };
 	var filteredFleet = game.expandFleet(new Input(attacker, null, game.BattleType.Ground, options), game.BattleSide.attacker).filterForBattle();
 
 	var u = game.UnitType;
 	var expected = [
-		game.StandardUnits[u.Ground],
+		game.StandardUnits[u.Infantry],
 		game.RaceSpecificUpgrades[game.Race.Naalu][u.Fighter],
 		game.RaceSpecificUpgrades[game.Race.Naalu][u.Fighter],
-		game.StandardUnits[u.Ground],
+		game.StandardUnits[u.Infantry],
 	];
 
 	testExpansion(test, filteredFleet, expected);
@@ -344,15 +344,15 @@ exports.expansionAndFilterNaaluFlagshipGroundBetter = function (test) {
 	var attacker = {};
 	attacker[game.UnitType.Flagship] = { count: 1 };
 	attacker[game.UnitType.Fighter] = { count: 2 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
 	var options = { attacker: { race: game.Race.Naalu }, };
 	var filteredFleet = game.expandFleet(new Input(attacker, null, game.BattleType.Ground, options), game.BattleSide.attacker).filterForBattle();
 
 	var u = game.UnitType;
 	var expected = [
-		game.StandardUnits[u.Ground],
-		game.StandardUnits[u.Ground],
+		game.StandardUnits[u.Infantry],
+		game.StandardUnits[u.Infantry],
 		game.RaceSpecificUnits[game.Race.Naalu][u.Fighter],
 		game.RaceSpecificUnits[game.Race.Naalu][u.Fighter],
 	];
@@ -547,7 +547,7 @@ exports.space2 = function (test) {
 	defender[game.UnitType.WarSun] = { count: 2 };
 	defender[game.UnitType.Cruiser] = { count: 7 };
 	defender[game.UnitType.Destroyer] = { count: 4 };
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 	defender[game.UnitType.Carrier] = { count: 3 };
 	defender[game.UnitType.PDS] = { count: 3 };
 
@@ -567,7 +567,7 @@ exports.space3 = function (test) {
 	defender[game.UnitType.WarSun] = { count: 2 };
 	defender[game.UnitType.Cruiser] = { count: 7 };
 	defender[game.UnitType.Destroyer] = { count: 4 };
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 	defender[game.UnitType.Carrier] = { count: 3 };
 	defender[game.UnitType.PDS] = { count: 3 };
 
@@ -806,11 +806,11 @@ exports.groundSimple = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 4 };
+	attacker[game.UnitType.Infantry] = { count: 4 };
 	attacker[game.UnitType.Dreadnought] = { count: 2 };
 	attacker[game.UnitType.WarSun] = { count: 1 };
 
-	defender[game.UnitType.Ground] = { count: 6 };
+	defender[game.UnitType.Infantry] = { count: 6 };
 	defender[game.UnitType.Cruiser] = { count: 7 }; //should have no impact
 	defender[game.UnitType.PDS] = { count: 2 };
 
@@ -822,7 +822,7 @@ exports.groundPds = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
 	defender[game.UnitType.PDS] = { count: 2 };
 
@@ -832,10 +832,10 @@ exports.groundPds = function (test) {
 exports.groundPlanetaryShield = function (test) {
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 4 };
+	attacker[game.UnitType.Infantry] = { count: 4 };
 	attacker[game.UnitType.Dreadnought] = { count: 0 };
 
-	defender[game.UnitType.Ground] = { count: 6 };
+	defender[game.UnitType.Infantry] = { count: 6 };
 	defender[game.UnitType.PDS] = { count: 2 };
 
 	var input = new Input(attacker, defender, game.BattleType.Ground);
@@ -853,10 +853,10 @@ exports.groundPlanetaryShield = function (test) {
 exports.groundPlanetaryShieldWarSun = function (test) {
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 4 };
+	attacker[game.UnitType.Infantry] = { count: 4 };
 	attacker[game.UnitType.Dreadnought] = { count: 5 };
 
-	defender[game.UnitType.Ground] = { count: 6 };
+	defender[game.UnitType.Infantry] = { count: 6 };
 	defender[game.UnitType.PDS] = { count: 2 };
 
 	var input = new Input(attacker, defender, game.BattleType.Ground);
@@ -951,10 +951,10 @@ exports.moraleBoostGround = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 	attacker[game.UnitType.PDS] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 
 	var options = { attacker: { moraleBoost: true }, defender: {} };
 
@@ -965,9 +965,9 @@ exports.moraleBoostMagenDefenseGround = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 4 };
+	attacker[game.UnitType.Infantry] = { count: 4 };
 
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = {
@@ -986,10 +986,10 @@ exports.fireTeamGround = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 	attacker[game.UnitType.PDS] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 
 	var options = { attacker: { fireTeam: true }, defender: {} };
 
@@ -1000,9 +1000,9 @@ exports.fireTeamMagenDefenseGround = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 4 };
+	attacker[game.UnitType.Infantry] = { count: 4 };
 
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = {
@@ -1251,9 +1251,9 @@ exports.antimassDeflectorsGround = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 	defender[game.UnitType.PDS] = { count: 3 };
 
 	var options = {
@@ -1375,9 +1375,9 @@ exports.plasmaScoringBombardmentGround = function (test) {
 	var defender = {};
 	attacker[game.UnitType.WarSun] = { count: 1 };
 	attacker[game.UnitType.Dreadnought] = { count: 2 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 
 	var options = {
 		attacker: { plasmaScoring: true },
@@ -1426,9 +1426,9 @@ exports.plasmaScoringSpaceCannonGround = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 2 };
+	defender[game.UnitType.Infantry] = { count: 2 };
 	defender[game.UnitType.PDS] = { count: 2 };
 
 	var options = {
@@ -1442,7 +1442,7 @@ exports.plasmaScoringSpaceCannonGround = function (test) {
 exports.plasmaScoringAntimassDeflectorsGround = function (test) {
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 1 };
+	attacker[game.UnitType.Infantry] = { count: 1 };
 
 	defender[game.UnitType.PDS] = { count: 1 };
 
@@ -1458,9 +1458,9 @@ exports.magenDefenseGround = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 5 };
+	attacker[game.UnitType.Infantry] = { count: 5 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = {
@@ -1475,9 +1475,9 @@ exports.magenDefenseGroundWithoutPds = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 5 };
+	attacker[game.UnitType.Infantry] = { count: 5 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 
 	var options = {
 		attacker: {},
@@ -1502,9 +1502,9 @@ exports.magenDefenseWarSunGround = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.WarSun] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 5 };
+	attacker[game.UnitType.Infantry] = { count: 5 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = {
@@ -1647,9 +1647,9 @@ exports.bunkerSimple = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Dreadnought] = { count: 3 };
-	attacker[game.UnitType.Ground] = { count: 7 };
+	attacker[game.UnitType.Infantry] = { count: 7 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 
 	var options = {
 		attacker: {},
@@ -1664,9 +1664,9 @@ exports.bunkerPlasmaScoring = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Dreadnought] = { count: 3 };
-	attacker[game.UnitType.Ground] = { count: 7 };
+	attacker[game.UnitType.Infantry] = { count: 7 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 
 	var options = {
 		attacker: { plasmaScoring: true },
@@ -1708,7 +1708,7 @@ exports.noRiskingDirectHit2 = function (test) {
 	defender[game.UnitType.WarSun] = { count: 2 };
 	defender[game.UnitType.Cruiser] = { count: 7 };
 	defender[game.UnitType.Destroyer] = { count: 4 };
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 	defender[game.UnitType.Carrier] = { count: 3 };
 	defender[game.UnitType.PDS] = { count: 3 };
 
@@ -1750,9 +1750,9 @@ exports.maneuveringJetsGround = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 1 };
+	defender[game.UnitType.Infantry] = { count: 1 };
 	defender[game.UnitType.PDS] = { count: 3 };
 
 	var options = { attacker: { maneuveringJets: true }, defender: {} };
@@ -1831,9 +1831,9 @@ exports.l1z1xRacialHarrow = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Dreadnought] = { count: 2 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 2 };
+	defender[game.UnitType.Infantry] = { count: 2 };
 
 	var options = { attacker: { race: game.Race.L1Z1X }, defender: {} };
 
@@ -1845,9 +1845,9 @@ exports.l1z1xRacialHarrowMoraleBoost = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Dreadnought] = { count: 2 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 2 };
+	defender[game.UnitType.Infantry] = { count: 2 };
 
 	var options = { attacker: { race: game.Race.L1Z1X }, defender: { moraleBoost: true } };
 
@@ -1859,9 +1859,9 @@ exports.l1z1xRacialHarrowBunker = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Dreadnought] = { count: 2 };
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 
 	var options = { attacker: { race: game.Race.L1Z1X }, defender: { bunker: true } };
 
@@ -1875,9 +1875,9 @@ exports.l1z1xRacialHarrowMagenDefense = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.WarSun] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = { attacker: { race: game.Race.L1Z1X }, defender: { magenDefense: true } };
@@ -1890,9 +1890,9 @@ exports.l1z1xRacialHarrowPlasmaScoring = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Dreadnought] = { count: 2 };
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 
 	var options = { attacker: { race: game.Race.L1Z1X, plasmaScoring: true }, defender: {} };
 
@@ -1905,7 +1905,7 @@ exports.l1z1xRacialHarrowNoAttacker = function (test) {
 	var defender = {};
 	attacker[game.UnitType.Dreadnought] = { count: 1 };
 
-	defender[game.UnitType.Ground] = { count: 1 };
+	defender[game.UnitType.Infantry] = { count: 1 };
 
 	var options = { attacker: { race: game.Race.L1Z1X }, defender: { moraleBoost: true } };
 
@@ -1917,9 +1917,9 @@ exports.l1z1xRacialHarrowBombardmentAgainsPdsMoraleBoost = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.WarSun] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 1 };
+	attacker[game.UnitType.Infantry] = { count: 1 };
 
-	defender[game.UnitType.Ground] = { count: 2 };
+	defender[game.UnitType.Infantry] = { count: 2 };
 	defender[game.UnitType.PDS] = { count: 2 };
 
 	var options = { attacker: { race: game.Race.L1Z1X }, defender: { moraleBoost: true } };
@@ -1930,9 +1930,9 @@ exports.l1z1xRacialHarrowBombardmentAgainsPdsMoraleBoost = function (test) {
 exports.l4Disruptors = function (test) {
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 2 };
+	defender[game.UnitType.Infantry] = { count: 2 };
 	defender[game.UnitType.PDS] = { count: 2 };
 
 	var options = { attacker: { race: game.Race.Letnev, l4Disruptors: true }, defender: {} };
@@ -2007,9 +2007,9 @@ exports.sardakkRacialValkyrieParticleWeave = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 1 };
+	attacker[game.UnitType.Infantry] = { count: 1 };
 
-	defender[game.UnitType.Ground] = { count: 1 };
+	defender[game.UnitType.Infantry] = { count: 1 };
 
 	var options = { attacker: { race: game.Race.Sardakk, valkyrieParticleWeave: true }, defender: {} };
 
@@ -2020,9 +2020,9 @@ exports.sardakkRacialValkyrieParticleWeaveBoth = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 2 };
+	defender[game.UnitType.Infantry] = { count: 2 };
 
 	// yes, this cannot happen in the actual game, but anyway
 	var options = {
@@ -2037,10 +2037,10 @@ exports.sardakkRacialValkyrieParticleWeaveHarrow = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 	attacker[game.UnitType.Dreadnought] = { count: 1 };
 
-	defender[game.UnitType.Ground] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 
 	var options = {
 		attacker: { race: game.Race.L1Z1X, },
@@ -2054,9 +2054,9 @@ exports.sardakkRacialValkyrieParticleWeaveMagenDefense = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 1 };
+	attacker[game.UnitType.Infantry] = { count: 1 };
 
-	defender[game.UnitType.Ground] = { count: 1 };
+	defender[game.UnitType.Infantry] = { count: 1 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = {
@@ -2283,7 +2283,7 @@ exports.virusFlagshipPds = function (test) {
 	var defender = {};
 	attacker[game.UnitType.Flagship] = { count: 1 };
 	attacker[game.UnitType.Dreadnought] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 1 };
+	attacker[game.UnitType.Infantry] = { count: 1 };
 	attacker[game.UnitType.Fighter] = { count: 1 };
 
 	defender[game.UnitType.Cruiser] = { count: 3 };
@@ -2299,7 +2299,7 @@ exports.virusFlagshipPdsGravitonLaser = function (test) {
 	var defender = {};
 	attacker[game.UnitType.Flagship] = { count: 1 };
 	attacker[game.UnitType.Dreadnought] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 1 };
+	attacker[game.UnitType.Infantry] = { count: 1 };
 	attacker[game.UnitType.Fighter] = { count: 1 };
 
 	defender[game.UnitType.Cruiser] = { count: 3 };
@@ -2314,7 +2314,7 @@ exports.virusFlagshipAttackerAssaultCannon = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Flagship] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 1 };
+	attacker[game.UnitType.Infantry] = { count: 1 };
 	attacker[game.UnitType.Fighter] = { count: 1 };
 
 	defender[game.UnitType.Cruiser] = { count: 3 };
@@ -2331,7 +2331,7 @@ exports.virusFlagshipDefenderAssaultCannon = function (test) {
 	attacker[game.UnitType.Cruiser] = { count: 3 };
 
 	defender[game.UnitType.Flagship] = { count: 1 };
-	defender[game.UnitType.Ground] = { count: 1 };
+	defender[game.UnitType.Infantry] = { count: 1 };
 	defender[game.UnitType.Fighter] = { count: 1 };
 
 	var options = { attacker: { assaultCannon: true, }, defender: { race: game.Race.Virus, } };
@@ -2343,7 +2343,7 @@ exports.virusFlagshipWinnuFlagship = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Flagship] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 1 };
+	attacker[game.UnitType.Infantry] = { count: 1 };
 	attacker[game.UnitType.Fighter] = { count: 1 };
 
 	defender[game.UnitType.Flagship] = { count: 1 };
@@ -2383,9 +2383,9 @@ exports.letnevFlagshipGround = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Flagship] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = { attacker: { race: game.Race.Letnev }, defender: {} };
@@ -2484,9 +2484,9 @@ exports.conventionsOfWar = function (test) {
 	var defender = {};
 	attacker[game.UnitType.WarSun] = { count: 1 };
 	attacker[game.UnitType.Dreadnought] = { count: 2 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 
 	var options = {
 		attacker: {},
@@ -2533,7 +2533,7 @@ exports.prophecyOfIxthNaalu = function (test) {
 	attacker[game.UnitType.Flagship] = { count: 1 };
 	attacker[game.UnitType.Fighter] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 
 	var options = { attacker: { race: game.Race.Naalu, prophecyOfIxth: true }, defender: {} };
 
@@ -2574,8 +2574,8 @@ exports.tekklarLegion = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
-	defender[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 
 	var options = { attacker: { tekklarLegion: true }, };
 
@@ -2586,8 +2586,8 @@ exports.tekklarLegionForSardakk = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
-	defender[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 
 	// should not take effect
 	var options = { attacker: { race: game.Race.Sardakk, tekklarLegion: true }, };
@@ -2599,8 +2599,8 @@ exports.tekklarLegionFireTeam = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
-	defender[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 
 	var options = { attacker: { tekklarLegion: true }, defender: { fireTeam: true } };
 
@@ -2611,8 +2611,8 @@ exports.tekklarLegionAgainstSardakk = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
-	defender[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 
 	// should not take effect
 	var options = { attacker: { tekklarLegion: true }, defender: { race: game.Race.Sardakk, } };
@@ -2655,9 +2655,9 @@ exports.x89Omega = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Dreadnought] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 
 	var options = { attacker: { x89Omega: true }, defender: { } };
 
@@ -2669,9 +2669,9 @@ exports.x89OmegaL1z1xRacialHarrow = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.Dreadnought] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 4 };
+	defender[game.UnitType.Infantry] = { count: 4 };
 
 	var options = { attacker: { race: game.Race.L1Z1X, x89Omega: true }, defender: { } };
 
@@ -2682,9 +2682,9 @@ exports.magenOmega = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = { attacker: { }, defender: { magenDefenseOmega: true } };
@@ -2696,9 +2696,9 @@ exports.magenOmegaDock = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 2 };
+	defender[game.UnitType.Infantry] = { count: 2 };
 
 	var options = { attacker: { }, defender: { magenDefenseOmega: true, hasDock: true } };
 
@@ -2709,9 +2709,9 @@ exports.magenOmegaPdsDock = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 2 };
+	defender[game.UnitType.Infantry] = { count: 2 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = { attacker: { }, defender: { magenDefenseOmega: true } };
@@ -2739,9 +2739,9 @@ exports.magenOmegaWarsun = function (test) {
 	var attacker = {};
 	var defender = {};
 	attacker[game.UnitType.WarSun] = { count: 1 };
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 5 };
+	defender[game.UnitType.Infantry] = { count: 5 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = { attacker: { }, defender: { } };
@@ -2764,9 +2764,9 @@ exports.magenOmegaL1z1xRacialHarrow = function (test) {
 
 	var attacker = {};
 	var defender = {};
-	attacker[game.UnitType.Ground] = { count: 3 };
+	attacker[game.UnitType.Infantry] = { count: 3 };
 
-	defender[game.UnitType.Ground] = { count: 3 };
+	defender[game.UnitType.Infantry] = { count: 3 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = { attacker: { race: game.Race.L1Z1X }, defender: { magenDefenseOmega: true } };
@@ -2780,9 +2780,9 @@ exports.magenOmegaNaalu = function (test) {
 	var defender = {};
 	attacker[game.UnitType.Flagship] = { count: 1 };
 	attacker[game.UnitType.Fighter] = { count: 2 };
-	attacker[game.UnitType.Ground] = { count: 2 };
+	attacker[game.UnitType.Infantry] = { count: 2 };
 
-	defender[game.UnitType.Ground] = { count: 2 };
+	defender[game.UnitType.Infantry] = { count: 2 };
 	defender[game.UnitType.PDS] = { count: 1 };
 
 	var options = { attacker: { race: game.Race.Naalu, upgraded: true }, defender: { magenDefenseOmega: true } };
@@ -2798,7 +2798,7 @@ var chaoticProfile = {
 	Carrier: { count: 4, zeroBias: 2 },
 	Destroyer: { count: 8, zeroBias: 4 },
 	Fighter: { count: 15, zeroBias: 5 },
-	Ground: { count: 10, zeroBias: 3 },
+	Infantry: { count: 10, zeroBias: 3 },
 	PDS: { count: 6, zeroBias: 3 },
 };
 

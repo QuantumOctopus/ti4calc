@@ -27,6 +27,18 @@
 
 			var attacker = attackerFull.filterForBattle();
 			var defender = defenderFull.filterForBattle();
+			var atkArgentFlagship = battleType === root.BattleType.Space && options.attacker.race === root.Race.Argent && (input[root.SideUnits[game.BattleSide.attacker]][UnitType.Flagship] || { count: 0 }).count !== 0;
+			var defArgentFlagship = battleType === root.BattleType.Space && options.defender.race === root.Race.Argent && (input[root.SideUnits[game.BattleSide.defender]][UnitType.Flagship] || { count: 0 }).count !== 0;
+			if (atkArgentFlagship) {
+				options.attacker.argentFlagship = true;
+				options.defender.argentFlagship = false;
+			} else if (defArgentFlagship) {
+				options.defender.argentFlagship = true;
+				options.attacker.argentFlagship = false;
+			} else {
+				options.attacker.argentFlagship = false;
+				options.defender.argentFlagship = false;
+			}
 
 			//use upper left as an origin
 			//initially all the probability mass is concentrated at both fleets being unharmed
@@ -103,6 +115,7 @@
 				battleType === game.BattleType.Space && options.attacker.letnevMunitionsFunding;
 			var defenderReroll = battleType === game.BattleType.Ground && options.defender.fireTeam ||
 				battleType === game.BattleType.Space && options.defender.letnevMunitionsFunding;
+			var extraDie = (options.attacker.evelynDeLouis || options.attacker.viscountUnlenn || options.defender.evelynDeLouis || options.defender.viscountUnlenn);
 
 			var magenDefenseActivated = battleType === game.BattleType.Ground &&
 				options.defender.magenDefense &&
@@ -125,10 +138,19 @@
 
 			if (attackerBoost !== undefined || defenderBoost !== undefined || // boosts apply to the first round only
 				magenDefenseActivated || // Magen Defence applies to the first round
-				attackerReroll || defenderReroll // re-rolls apply to the first round
+				attackerReroll || defenderReroll || extraDie// re-rolls apply to the first round
 			) {
 				//need to make one round of propagation with either altered probabilities or attacker not firing
 				var attackerTransitionsFactory;
+
+				if (extraDie){
+					if (options.attacker.evelynDeLouis && battleType === game.BattleType.Ground || options.attacker.viscountUnlenn && battleType === game.BattleType.Space){
+						adjustUnitWithLowest(problem.attacker, 'battleValue', true);
+					} else if (options.defender.evelynDeLouis && battleType === game.BattleType.Ground || options.defender.viscountUnlenn && battleType === game.BattleType.Space) {
+						adjustUnitWithLowest(problem.defender, 'battleValue', true);
+					}
+				}
+
 				if (magenDefenseActivated)
 					attackerTransitionsFactory = function () {
 						return scale([1], problem.attacker.length + 1); // attacker does not fire
@@ -156,6 +178,13 @@
 					}
 				} else {
 					applyTransitions(problem, attackerTransitionsFactory, defenderTransitionsFactory, options, effectsFlags);
+					if (extraDie){
+						if (options.attacker.evelynDeLouis && battleType === game.BattleType.Ground || options.attacker.viscountUnlenn && battleType === game.BattleType.Space){
+							adjustUnitWithLowest(problem.attacker, 'battleValue', false);
+						} else if (options.defender.evelynDeLouis && battleType === game.BattleType.Ground || options.defender.viscountUnlenn && battleType === game.BattleType.Space) {
+							adjustUnitWithLowest(problem.defender, 'battleValue', false);
+						}
+					}
 				}
 				if (battleType === game.BattleType.Space)
 					collapseYinFlagship(problem, options);
@@ -176,6 +205,18 @@
 			}
 
 			propagateProbabilityUpLeft(problem, battleType, attackerFull, defenderFull, options);
+
+			function adjustUnitWithLowest(fleet, property, increase) {
+				var result = null;
+				var bestBattleValue = Infinity;
+				for (var i = 0; i < fleet.length; i++) {
+					if (fleet[i][property] < bestBattleValue) {
+						result = fleet[i];
+						bestBattleValue = fleet[i][property];
+					}
+				}
+				result.battleDice = increase ? result.battleDice + 1 : result.battleDice - 1;
+			}
 		}
 
 		function propagateProbabilityUpLeft(problem, battleType, attackerFull, defenderFull, options) {
@@ -184,7 +225,7 @@
 			var attackerTransitions = computeFleetTransitions(problem.attacker, game.ThrowType.Battle, boost(battleType, options.attacker, options.defender, problem.attacker, false));
 			var defenderTransitions = computeFleetTransitions(problem.defender, game.ThrowType.Battle, boost(battleType, options.defender, options.attacker, problem.defender, false));
 			if (options.attacker.race === game.Race.L1Z1X && battleType === game.BattleType.Ground) {
-				var harrowTransitions = bombardmentTransitionsVector(attackerFull, defenderFull, options);
+				var harrowTransitions = bombardmentTransitionsVector(attackerFull, defenderFull, options, true);
 				if (harrowTransitions.length === 1) //means no bombardment
 					harrowTransitions = undefined;
 			}
@@ -218,7 +259,6 @@
 					var transitionMatrix = orthogonalMultiply(attackerTransitionsVector, defenderTransitionsVector, d + 1, a + 1);
 					if (battleType === game.BattleType.Ground)
 						transitionMatrix = adjustForValkyrieParticleWeave(transitionMatrix, options, d + 1, a + 1);
-
 					if (harrowTransitions)
 						transitionMatrix = harrowMultiply(transitionMatrix, harrowTransitions, d + 1, a + 1); // no Sustain Damage assumption
 
@@ -273,6 +313,23 @@
 					currentTransitions = slideMultiply(currentTransitions, transitions);
 				}
 				result.push(currentTransitions);
+			}
+			return result;
+		}
+
+		/** like computeFleetTransitions, but not all units are allowed to throw dice, adds extra dice */
+		function computeSelectedUnitsTransitionsBonus(fleet, throwType, predicate, modifier, numBonusDice) {
+			var result = computeSelectedUnitsTransitions(fleet, throwType, predicate, modifier);
+			var bestUnit = getUnitWithLowest(fleet, game.ThrowValues[throwType]);
+			if (numBonusDice !== 0 && bestUnit){
+				var fleetInflicted = result.pop()
+				if (bestUnit) {
+					var unitWithOneDie = bestUnit.clone();
+					unitWithOneDie[game.ThrowDice[throwType]] = numBonusDice;
+					var unitTransitions = computeUnitTransitions(unitWithOneDie, throwType, modifier);
+					fleetInflicted = slideMultiply(fleetInflicted, unitTransitions);
+					result.push(fleetInflicted)
+				}
 			}
 			return result;
 		}
@@ -413,7 +470,6 @@
 					var transitionMatrix = orthogonalMultiply(attackerTransitionsVector, defenderTransitionsVector, d + 1, a + 1);
 					if (effectsFlags.valkyrieParticleWeave)
 						transitionMatrix = adjustForValkyrieParticleWeave(transitionMatrix, options, d + 1, a + 1); // no Sustain Damage assumption. Otherwise Valkyrie should be taken into account before Non-Euclidean Shielding somehow
-
 					for (var attackerInflicted = 0; attackerInflicted < transitionMatrix.rows; attackerInflicted++) {
 						for (var defenderInflicted = 0; defenderInflicted < transitionMatrix.columns; defenderInflicted++) {
 							if (attackerInflicted === 0 && defenderInflicted === 0) continue;
@@ -432,15 +488,16 @@
 					name: 'Space Cannon -> Ships',
 					appliesTo: game.BattleType.Space,
 					execute: function (problemArray, attackerFull, defenderFull, options) {
+
 						var result = [];
 						var attackerVirusFlagship = options.attacker.race === game.Race.Virus &&
-							attackerFull.some(unitIs(game.UnitType.Flagship)) && attackerFull.some(unitIs(game.UnitType.Ground));
+							attackerFull.some(unitIs(game.UnitType.Flagship)) && attackerFull.some(unitIs(game.UnitType.Infantry));
 						var defenderVirusFlagship = options.defender.race === game.Race.Virus &&
-							defenderFull.some(unitIs(game.UnitType.Flagship)) && defenderFull.some(unitIs(game.UnitType.Ground));
+							defenderFull.some(unitIs(game.UnitType.Flagship)) && defenderFull.some(unitIs(game.UnitType.Infantry));
 
 						problemArray.forEach(function (problem) {
-							var attackerTransitionsVector = getSpaceCannonTransitionsVector(attackerFull, options.attacker, options.defender);
-							var defenderTransitionsVector = getSpaceCannonTransitionsVector(defenderFull, options.defender, options.attacker);
+							var attackerTransitionsVector = options.defender.argentFlagship ? [1] : getSpaceCannonTransitionsVector(attackerFull, options.attacker, options.defender);
+							var defenderTransitionsVector = options.attacker.argentFlagship ? [1] : getSpaceCannonTransitionsVector(defenderFull, options.defender, options.attacker);
 
 							if (options.attacker.gravitonLaser || options.defender.gravitonLaser ||
 								attackerVirusFlagship || defenderVirusFlagship
@@ -484,10 +541,15 @@
 							var modifier = opponentSideOptions.antimassDeflectors ? -1 : 0;
 							var spaceCannonFleet = fleetFull.filter(hasSpaceCannon);
 							var vector;
-							if (thisSideOptions.plasmaScoring)
-								vector = fleetTransitionsVectorWithPlasmaScoring(spaceCannonFleet, game.ThrowType.SpaceCannon, modifier);
-							else
-								vector = fleetTransitionsVector(spaceCannonFleet, game.ThrowType.SpaceCannon, modifier);
+							var numPSDice = thisSideOptions.plasmaScoring ? 1 : 0;
+							var numArgentDice =  thisSideOptions.trrakanAunZulok ? 1 : 0;
+							var numArgentPromDice = thisSideOptions.strikeWingAmbuscade ? 1 : 0;
+							var numBonusDice = numPSDice + numArgentDice + numArgentPromDice;
+							vector = fleetTransitionsVectorWithExtraDice(spaceCannonFleet, game.ThrowType.SpaceCannon, modifier, numBonusDice);
+							// if (thisSideOptions.plasmaScoring)
+							// 	vector = fleetTransitionsVectorWithExtraDice(spaceCannonFleet, game.ThrowType.SpaceCannon, modifier);
+							// else
+							// 	vector = fleetTransitionsVector(spaceCannonFleet, game.ThrowType.SpaceCannon, modifier);
 							return cancelHits(vector, opponentSideOptions.maneuveringJets ? 1 : 0)
 						}
 
@@ -498,7 +560,7 @@
 						function gravitonLaserVictims(fleet, index, hits, thisSideOptions, opposingSideOptions) {
 							if (hits === 0 || index === 0)
 								return structs.Victim.Null;
-							if (!opposingSideOptions.gravitonLaser && !thisSideOptions.nonEuclidean && !fleet.some(unitIs(game.UnitType.Ground))) {
+							if (!opposingSideOptions.gravitonLaser && !thisSideOptions.nonEuclidean && !fleet.some(unitIs(game.UnitType.Infantry))) {
 								var result = new structs.Victim();
 								result._dead = Math.min(hits, fleet.map(absorbsHits).reduce(sum));
 								return result;
@@ -511,7 +573,7 @@
 								var unit = fleet[i];
 								if (unit.type === game.UnitType.Fighter && opposingSideOptions.gravitonLaser) {
 									currentRange = null;
-								} else if (unit.type === game.UnitType.Ground) {
+								} else if (unit.type === game.UnitType.Infantry) {
 									currentRange = null;
 								} else {
 									if (currentRange === null) {
@@ -675,11 +737,30 @@
 
 							var ensemble = new structs.EnsembleSplit(problem);
 
-							var attackerTransitions = computeSelectedUnitsTransitions(problem.attacker, game.ThrowType.Barrage, hasBarrage);
-							var defenderTransitions = computeSelectedUnitsTransitions(problem.defender, game.ThrowType.Barrage, hasBarrage);
+							var defArgentDice =  options.defender.trrakanAunZulok ? 1 : 0;
+							var defArgentPromDice = options.defender.strikeWingAmbuscade ? 1 : 0;
+							var defBonusDice = defArgentDice + defArgentPromDice;
+							var atkArgentDice =  options.attacker.trrakanAunZulok ? 1 : 0;
+							var atkArgentPromDice = options.attacker.strikeWingAmbuscade ? 1 : 0;
+							var atkBonusDice = atkArgentDice + atkArgentPromDice;
+
+							var attackerTransitions = computeSelectedUnitsTransitionsBonus(problem.attacker, game.ThrowType.Barrage, hasBarrage, undefined, atkBonusDice);
+							var defenderTransitions = computeSelectedUnitsTransitionsBonus(problem.defender, game.ThrowType.Barrage, hasBarrage, undefined, defBonusDice);
 
 							var attackerVulnerable = getVulnerableUnitsRange(problem.attacker, unitIs(game.UnitType.Fighter));
 							var defenderVulnerable = getVulnerableUnitsRange(problem.defender, unitIs(game.UnitType.Fighter));
+
+							if (options.attacker.waylay){
+								defenderWaylayTransitions = scale([1], problem.defender.length + 1);
+								applyTransitions(problem, attackerTransitions, defenderWaylayTransitions, options);
+								collapseYinFlagship(problem, options);
+								attackerTransitions = scale([1], problem.attacker.length + 1);
+							} else if (options.defender.waylay){
+								attackerWaylayTransitions = scale([1], problem.attacker.length + 1);
+								applyTransitions(problem, attackerWaylayTransitions, defenderTransitions, options);
+								collapseYinFlagship(problem, options);
+								defenderTransitions = scale([1], problem.defender.length + 1);
+							}
 
 							var distribution = problem.distribution;
 							for (var a = 0; a < distribution.rows; a++) {
@@ -697,8 +778,7 @@
 									}
 								}
 							}
-
-							result.push.apply(result, ensemble.getSubproblems());
+						result.push.apply(result, ensemble.getSubproblems());
 						});
 
 						return result;
@@ -741,7 +821,7 @@
 					appliesTo: game.BattleType.Ground,
 					execute: function (problemArray, attackerFull, defenderFull, options) {
 						problemArray.forEach(function (problem) {
-							var attackerTransitionsVector = bombardmentTransitionsVector(attackerFull, defenderFull, options);
+							var attackerTransitionsVector = bombardmentTransitionsVector(attackerFull, defenderFull, options, false);
 							var attackerTransitions = scale(attackerTransitionsVector, problem.attacker.length + 1);
 							var defenderTransitions = scale([1], problem.defender.length + 1);
 							applyTransitions(problem, attackerTransitions, defenderTransitions, options);
@@ -758,17 +838,26 @@
 
 							var attackerTransitions = scale([1], problem.attacker.length + 1); // attacker does not fire
 							var defenderModifier = options.attacker.antimassDeflectors ? -1 : 0;
-							var pdsDefender = defenderFull.filter(unitIs(game.UnitType.PDS));
+							var pdsDefender = defenderFull.filter(hasSpaceCannon);
 							var defenderTransitionsVector;
-							if (options.defender.plasmaScoring)
-								defenderTransitionsVector = fleetTransitionsVectorWithPlasmaScoring(pdsDefender, game.ThrowType.SpaceCannon, defenderModifier);
-							else
-								defenderTransitionsVector = fleetTransitionsVector(pdsDefender, game.ThrowType.SpaceCannon, defenderModifier);
+							var numPSDice = options.defender.plasmaScoring ? 1 : 0;
+							var numArgentDice =  options.defender.trrakanAunZulok ? 1 : 0;
+							var numArgentPromDice = options.defender.strikeWingAmbuscade ? 1 : 0;
+							var numBonusDice = numPSDice + numArgentDice + numArgentPromDice;
+							defenderTransitionsVector = fleetTransitionsVectorWithExtraDice(pdsDefender, game.ThrowType.SpaceCannon, defenderModifier, numBonusDice);
+							// if (options.defender.plasmaScoring)
+							// 	defenderTransitionsVector = fleetTransitionsVectorWithExtraDice(pdsDefender, game.ThrowType.SpaceCannon, defenderModifier);
+							// else
+							// 	defenderTransitionsVector = fleetTransitionsVector(pdsDefender, game.ThrowType.SpaceCannon, defenderModifier);
 							var defenderTransitions = scale(cancelHits(defenderTransitionsVector, options.attacker.maneuveringJets ? 1 : 0), problem.defender.length + 1);
 
 							applyTransitions(problem, attackerTransitions, defenderTransitions, options);
 						});
 						return problemArray;
+
+						function hasSpaceCannon(unit) {
+							return unit.spaceCannonDice !== 0;
+						}
 					},
 				},
 			];
@@ -882,6 +971,63 @@
 						return battleType === game.BattleType.Space && sideOptions.nebula ? 1 : 0;
 					}
 				},
+				{
+					name: 'iconoclast',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions) {
+						return battleType === game.BattleType.Ground && (sideOptions.iconoclast && !(sideOptions.articlesOfWar || opponentOptions.articlesOfWar)) ?
+							function (unit) {
+								return unit.type === game.UnitType.Mech ? 2 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'mordred',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions) {
+						return (sideOptions.mordred && !(sideOptions.articlesOfWar || opponentOptions.articlesOfWar)) ?
+							function (unit) {
+								return unit.type === game.UnitType.Mech ? 2 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'rickar',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions) {
+						return sideOptions.rickar ? 2 : 0;
+					}
+				},
+				{
+					name: 'Shield Paling',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions, opponentOptions, fleet) {
+						// Unit reordering, where the Flagship is not the first is not taken into account
+						// Several Flagships not taken into account
+						return sideOptions.race === game.Race.JolNar && battleType === game.BattleType.Ground && !(sideOptions.articlesOfWar || opponentOptions.articlesOfWar) &&
+						fleet.some(unitIs(game.UnitType.Mech)) ?
+							function (unit) {
+								return unit.type == game.UnitType.Infantry ? 1 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'needOpponentToken',
+					firstRoundOnly: false,
+					apply: function (battleType, sideOptions) {
+						return sideOptions.race === game.Race.Mahact && battleType === game.BattleType.Space && sideOptions.needOpponentToken ?
+							function (unit) {
+								return unit.type === game.UnitType.Flagship ? 2 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'superCharge',
+					firstRoundOnly: true,
+					apply: function (battleType, sideOptions) {
+						return sideOptions.superCharge ? 1 : 0;
+					}
+				},
 			];
 		}
 
@@ -895,19 +1041,26 @@
 			return result;
 		}
 
-		function bombardmentTransitionsVector(attackerFull, defenderFull, options) {
+		function bombardmentTransitionsVector(attackerFull, defenderFull, options, harrowVal) {
 			var bombardmentPossible = !options.defender.conventionsOfWar && (
 				!defenderFull.some(unitIs(game.UnitType.PDS)) // either there are no defending PDS
+				|| !(defenderFull.some(unitIs(game.UnitType.Mech)) && options.defender.race === game.Race.Arborec) // or no Arborec Mechs
 				|| attackerFull.some(unitIs(game.UnitType.WarSun)) // or there are but attacking WarSuns negate their Planetary Shield
 				|| options.attacker.race === game.Race.Letnev && attackerFull.some(unitIs(game.UnitType.Flagship)) // Letnev Flagship negates Planetary Shield as well
+				|| options.attacker.twoRam
 			);
 			if (!bombardmentPossible) return [1];
 
 			var attackerModifier = options.defender.bunker ? -4 : 0;
 			var bombardmentAttacker = attackerFull.filter(hasBombardment);
-			var resultTransitionsVector = options.attacker.plasmaScoring ?
-				fleetTransitionsVectorWithPlasmaScoring(bombardmentAttacker, game.ThrowType.Bombardment, attackerModifier) :
-				fleetTransitionsVector(bombardmentAttacker, game.ThrowType.Bombardment, attackerModifier);
+			var numPSDice = options.attacker.plasmaScoring ? 1 : 0;
+			var numArgentDice =  options.attacker.trrakanAunZulok ? 1 : 0;
+			var numArgentPromDice = options.attacker.strikeWingAmbuscade ? 1 : 0;
+			var numBonusDice = numPSDice + numArgentDice + numArgentPromDice;
+			// var resultTransitionsVector = options.attacker.plasmaScoring ?
+			// 	fleetTransitionsVectorWithExtraDice(bombardmentAttacker, game.ThrowType.Bombardment, attackerModifier) :
+			// 	fleetTransitionsVector(bombardmentAttacker, game.ThrowType.Bombardment, attackerModifier);
+			var resultTransitionsVector = fleetTransitionsVectorWithExtraDice(bombardmentAttacker, game.ThrowType.Bombardment, attackerModifier, numBonusDice)
 
 			if (options.attacker.x89Omega) {
 				var x89TransitionsVector = new Array(defenderFull.length + 1);
@@ -920,16 +1073,16 @@
 			return resultTransitionsVector;
 
 			function hasBombardment(unit) {
-				return unit.bombardmentDice !== 0;
+				return (harrowVal && unit.type === UnitType.Mech) ? false : unit.bombardmentDice !== 0;
 			}
 		}
 
-		function fleetTransitionsVectorWithPlasmaScoring(fleet, throwType, modifier) {
+		function fleetTransitionsVectorWithExtraDice(fleet, throwType, modifier, numDice) {
 			var fleetInflicted = computeFleetTransitions(fleet, throwType, modifier).pop();
 			var bestUnit = getUnitWithLowest(fleet, game.ThrowValues[throwType]);
 			if (bestUnit) {
 				var unitWithOneDie = bestUnit.clone();
-				unitWithOneDie[game.ThrowDice[throwType]] = 1;
+				unitWithOneDie[game.ThrowDice[throwType]] = numDice;
 				var unitTransitions = computeUnitTransitions(unitWithOneDie, throwType, modifier);
 				fleetInflicted = slideMultiply(unitTransitions, fleetInflicted);
 			}
@@ -1030,7 +1183,7 @@
 			fleet.filter(unitIs(game.UnitType.Flagship)).forEach(function (flagship) {
 				flagship.battleDice = battleDice === null ?
 					// according to https://boardgamegeek.com/thread/1916774/nekrowinnu-flagship-interaction
-					(battleDice = opposingFleet.slice(0, opposingFleetCount).filter(notFighterNorGroundForceShip).length) :
+					(battleDice = opposingFleet.slice(0, opposingFleetCount).filter(notFighterNorInfantryShip).length) :
 					battleDice;
 			});
 			return battleDice !== null; // means flagship present
@@ -1080,8 +1233,8 @@
 			return unit.type !== game.UnitType.Fighter && !unit.isDamageGhost;
 		}
 
-		function notFighterNorGroundForceShip(unit) {
-			return unit.type !== game.UnitType.Fighter && unit.type !== game.UnitType.Ground && !unit.isDamageGhost;
+		function notFighterNorInfantryShip(unit) {
+			return unit.type !== game.UnitType.Fighter && unit.type !== game.UnitType.Infantry && !unit.isDamageGhost;
 		}
 
 		function findLastIndex(array, predicate) {

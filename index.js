@@ -36,7 +36,6 @@
 			},
 			displayName: function (unitType) {
 				if (unitType === UnitType.WarSun) return 'War Sun';
-				else if (unitType === UnitType.Ground) return 'Ground Force';
 				else return unitType;
 			},
 			clear: function (side) {
@@ -60,7 +59,11 @@
 						self.options.defender.race === Race.L1Z1X && self.defenderUnits.Flagship.count !== 0;
 					var letnevFlagship = self.options.attacker.race === Race.Letnev && self.attackerUnits.Flagship.count !== 0 ||
 						self.options.defender.race === Race.Letnev && self.defenderUnits.Flagship.count !== 0;
-					if ((duraniumArmor || l1z1xFlagship || letnevFlagship) && self.battleType === BattleType.Space || self.forceSlow)
+					var sardakkMech = (self.options.attacker.race === Race.Sardakk && self.attackerUnits.Mech.count !== 0 ||
+						self.options.defender.race === Race.Sardakk && self.defenderUnits.Mech.count !== 0) && !(self.options.attacker.articlesOfWar || self.options.defender.articlesOfWar);
+					var raidFormation = (self.options.attacker.race === Race.Argent && (self.attackerUnits.Destroyer.count !== 0 || self.options.attacker.cavalryI || self.options.attacker.cavalryII)) ||
+						(self.options.defender.race === Race.Argent && (self.defenderUnits.Destroyer.count !== 0 || self.options.defender.cavalryI || self.options.defender.cavalryII));
+					if (( l1z1xFlagship || letnevFlagship || raidFormation) && self.battleType === BattleType.Space || duraniumArmor || self.forceSlow || sardakkMech && self.battleType === BattleType.Ground)
 						lastComputed = imitator.estimateProbabilities(self);
 					else
 						lastComputed = calculator.computeProbabilities(self);
@@ -204,7 +207,7 @@
 					case UnitType.Fighter:
 						return this.battleType === BattleType.Space ||
 							battleSide === BattleSide.attacker && this.options.attacker.race === Race.Naalu && this.attackerUnits.Flagship.count !== 0;
-					case UnitType.Ground:
+					case UnitType.Infantry:
 						return this.battleType === BattleType.Ground ||
 							this.options[battleSide].race === Race.Virus && this[SideUnits[battleSide]].Flagship.count !== 0;
 					case UnitType.PDS:
@@ -297,6 +300,39 @@
 						key: defenderTechKeys[i],
 						option: defenderTech[defenderTechKeys[i]],
 					} : stub(attackerTech[attackerTechKeys[i]].title);
+					result.push(pair);
+				}
+				return result;
+
+				function stub(name) {
+					return {
+						key: '',
+						option:
+							{
+								title: name,
+								availableFor: function () {
+									return false;
+								}
+							}
+					};
+				}
+			},
+			factionEffects: function () {
+				var attackerEffect = FactionEffects[this.options.attacker.race] || {};
+				var defenderEffect = FactionEffects[this.options.defender.race] || {};
+				var attackerEffectKeys = Object.keys(attackerEffect);
+				var defenderEffectKeys = Object.keys(defenderEffect);
+				var result = [];
+				for (var i = 0; i < attackerEffectKeys.length || i < defenderEffectKeys.length; ++i) {
+					var pair = {};
+					pair.attacker = i < attackerEffectKeys.length ? {
+						key: attackerEffectKeys[i],
+						option: attackerEffect[attackerEffectKeys[i]],
+					} : stub(defenderEffect[defenderEffectKeys[i]].title);
+					pair.defender = i < defenderEffectKeys.length ? {
+						key: defenderEffectKeys[i],
+						option: defenderEffect[defenderEffectKeys[i]],
+					} : stub(attackerEffect[attackerEffectKeys[i]].title);
 					result.push(pair);
 				}
 				return result;
@@ -473,7 +509,41 @@
 		}
 		return false;
 	}
+	// function getPersistedInput() {
+	// 	var result = {
+	// 		battleType: BattleType.Space,
+	// 		attackerUnits: {},
+	// 		defenderUnits: {},
+	// 		options: {
+	// 			attacker: {
+	// 				race: Race.Arborec,
+	// 			}, defender: null,
+	// 		},
+	// 		canvasSize: 0,
+	// 	};
 
+	// 	for (var technology in Technologies) {
+	// 		result.options.attacker[technology] = false;
+	// 	}
+	// 	for (var actionCard in ActionCards) {
+	// 		result.options.attacker[actionCard] = false;
+	// 	}
+	// 	for (var agenda in Agendas) {
+	// 		result.options.attacker[agenda] = false;
+	// 	}
+	// 	for (var promissory in Promissory) {
+	// 		result.options.attacker[promissory] = false;
+	// 	}
+	// 	result.options.attacker.riskDirectHit = true;
+
+	// 	result.options.defender = Object.assign({}, result.options.attacker);
+
+	// 	for (var unitType in UnitType) {
+	// 		result.attackerUnits[unitType] = { count: 0, upgraded: false, damaged: 0 };
+	// 		result.defenderUnits[unitType] = { count: 0, upgraded: false, damaged: 0 };
+	// 	}
+	// 	return result;
+	// }
 	function getPersistedInput() {
 		if (!localStorage) return null;
 		var resultString = localStorage.getItem('ti4calc/input');
