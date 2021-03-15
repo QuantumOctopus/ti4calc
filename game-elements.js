@@ -31,8 +31,8 @@
 		Carrier: 'Carrier',
 		Destroyer: 'Destroyer',
 		Fighter: 'Fighter',
-		Infantry: 'Infantry',
 		Mech: 'Mech',
+		Infantry: 'Infantry',
 		PDS: 'PDS',
 	};
 
@@ -46,9 +46,10 @@
 		Destroyer: '+',
 		Carrier: 'V',
 		Fighter: 'F',
-		Infantry: 'I',
 		Mech: 'M',
+		Infantry: 'I',
 		PDS: 'P',
+		'Cavalry': 'T',
 	};
 
 	root.Race = {
@@ -73,7 +74,7 @@
 		Cabal: 'Cabal',
 		Empyrean: 'Empyrean',
 		Mahact: 'Mahact',
-		NaazRokha: 'Naaz-Rokha',
+		NaazRokha: 'NaazRokha',
 		Nomad: 'Nomad',
 		Titans: 'Titans',
 	};
@@ -120,9 +121,11 @@
 		fireTeam: new Option('Fire Team 1st round', 'Reroll dice after first round of invasion combat'),
 		fighterPrototype: new Option('Fighter Prototype', '+2 dice modifier to Fighters during the first battle round'),
 		bunker: new Option('Bunker', '-4 dice modifier to Bombardment rolls', 'defender'),
-		experimentalBattlestation: new Option('Experimental Battlestation', 'Additional unit with Space Cannon 5(x3)'),
+		experimentalBattlestation: new Option('Experimental Battlestation', 'Additional unit with Space Cannon 5(x3)','defender'),
 		maneuveringJets: new Option('Maneuvering Jets', 'Cancel 1 Space Cannon hit'),
 		riskDirectHit: new Option('Risk Direct Hit', 'Damage units vulnerable to Direct Hit before killing off fodder'),
+		blitz: new Option('Blitz', 'Adds BOMBARDMENT 6 to non-fighter ships without BOMBARDMENT', 'attacker'),
+		waylay: new Option('Waylay', 'Allows AFB hits to be assigned to non-fighter ships'),
 	};
 
 	root.Technologies = {
@@ -140,7 +143,8 @@
 	root.Agendas = {
 		publicizeSchematics: new Option('Publicize Weapon Schematics', 'WarSuns don\'t sustain damage'),
 		conventionsOfWar: new Option('Conventions of War', 'No bombardment', 'defender'),
-		prophecyOfIxth: new Option('Prophecy of IXTH', '+1 to Fighters rolls'),
+		prophecyOfIxth: new Option('Prophecy of Ixth', '+1 to Fighters rolls'),
+		articlesOfWar: new Option('Articles of War', 'Mechs lose printed abilities other than sustain damage'),
 	};
 
 	root.Promissory = {
@@ -182,6 +186,7 @@
 
 	root.Leaders = {
 		trrakanAunZulok: new Option('Trrakan Aun Zulok', '+1 die to unit ability'),
+		evelynDeLouis: new Option('Evelyn DeLouis', '+1 die to a ground force during first round of ground combat'),
 		viscountUnlenn: new Option('Viscount Unlenn', '+1 die to a ship during first round of space combat'),
 		taZern: new Option('Ta Zern', 'Reroll missed ability roll dice'),
 		twoRam: new Option('2Ram', 'Ignores Planetary Shield'),
@@ -311,6 +316,20 @@
 		ExperimentalBattlestation: new root.UnitInfo('Bloodthirsty Space Dock', {
 			spaceCannonValue: 5,
 			spaceCannonDice: 3,
+		}),
+		CavalryI: new root.UnitInfo('Cavalry', {
+			sustainDamageHits: 1,
+			barrageValue: 8,
+			barrageDice: 3,
+			battleValue: 7,
+			battleDice: 2,
+		}),
+		CavalryII: new root.UnitInfo('Cavalry', {
+			sustainDamageHits: 1,
+			barrageValue: 5,
+			barrageDice: 3,
+			battleValue: 5,
+			battleDice: 2,
 		}),
 	};
 
@@ -676,16 +695,17 @@
 				cost: 1,
 			}),
 		},
-		// Nomad: {
-		// 	Flagship: new root.UnitInfo(UnitType.Flagship, {
-		// 		sustainDamageHits: 1,
-		// 		barrageValue: 5,
-		// 		barrageDice: 3,
-		// 		battleValue: 5,
-		// 		battleDice: 2,
-		// 		race: root.Race.Nomad,
-		// 		cost: 8,
-		// 	}),
+		Nomad: {
+			Flagship: new root.UnitInfo(UnitType.Flagship, {
+				sustainDamageHits: 1,
+				barrageValue: 5,
+				barrageDice: 3,
+				battleValue: 5,
+				battleDice: 2,
+				race: root.Race.Nomad,
+				cost: 8,
+			}),
+		},
 		Titans: {
 			Cruiser: new root.UnitInfo(UnitType.Cruiser, {
 				sustainDamageHits: 1,
@@ -725,8 +745,30 @@
 
 		var opponentMentakFlagship = battleType === root.BattleType.Space && opponentSideOptions.race === root.Race.Mentak &&
 			(input[root.SideUnits[opponentSide]][UnitType.Flagship] || { count: 0 }).count !== 0;
-		var opponentMentakMech = battleType === root.BattleType.Ground && opponentSideOptions.race === root.Race.Mentak &&
+		var opponentMentakMech = battleType === root.BattleType.Ground && !(options.attacker.articlesOfWar || options.defender.articlesOfWar) && opponentSideOptions.race === root.Race.Mentak &&
 			(input[root.SideUnits[opponentSide]][UnitType.Mech] || { count: 0 }).count !== 0;
+		var NaazRokhaMechsSpace = battleType === root.BattleType.Space && thisSideOptions.race === root.Race.NaazRokha
+		var NaazRokhaMechsGround = battleType === root.BattleType.Ground && thisSideOptions.race === root.Race.NaazRokha
+
+		if (NaazRokhaMechsSpace){
+			standardUnits[UnitType.Mech].battleValue = 8;
+			standardUnits[UnitType.Mech].sustainDamageHits = 0;
+		} else if (NaazRokhaMechsGround){
+			standardUnits[UnitType.Mech].battleValue = 6;
+			standardUnits[UnitType.Mech].sustainDamageHits = 1;
+		}
+		if (thisSideOptions.race === root.Race.NaazRokha &&	(input[root.SideUnits[battleSide]][UnitType.Flagship] || { count: 0 }).count !== 0){
+			standardUnits[UnitType.Mech].battleDice = 3
+		} else if (thisSideOptions.race === root.Race.NaazRokha &&	(input[root.SideUnits[battleSide]][UnitType.Flagship] || { count: 0 }).count === 0){
+			standardUnits[UnitType.Mech].battleDice = 2
+		}
+		if (options.attacker.articlesOfWar || options.defender.articlesOfWar){
+			root.MergedUnits[root.Race.Xxcha].Mech.spaceCannonDice = 0;
+			root.MergedUnits[root.Race.L1Z1X].Mech.bombardmentDice = 0;
+		} else {
+			root.MergedUnits[root.Race.Xxcha].Mech.spaceCannonDice = 1;
+			root.MergedUnits[root.Race.L1Z1X].Mech.bombardmentDice = 1;
+		}
 
 		var result = [];
 		var thisSideCounters = input[root.SideUnits[battleSide]];
@@ -756,6 +798,14 @@
 				}
 			}
 		}
+		if (thisSideOptions.blitz){
+			for (var unit in result){
+				if (!result[unit].bombardmentValue && !result[unit].isDamageGhost && (result[unit].type === UnitType.Flagship || result[unit].type === UnitType.Cruiser || result[unit].type === UnitType.Carrier || result[unit].type === UnitType.Destroyer)){
+					result[unit].bombardmentValue = 6;
+					result[unit].bombardmentDice = 1;
+				}
+			}
+		}
 
 		var ships = createShips();
 		var groundForces = createGroundForces();
@@ -765,19 +815,37 @@
 			(thisSideCounters[UnitType.Flagship] || { count: 0 }).count !== 0;
 		var helTitan = battleType === root.BattleType.Ground && thisSideOptions.race === root.Race.Titans &&
 			(thisSideCounters[UnitType.PDS] || { count: 0 }).count !== 0;
+		if (battleType === root.BattleType.Space && thisSideOptions.cavalryI){
+			result.push(root.StandardUnits.CavalryI);
+			if (!opponentMentakFlagship) {
+				result.push(root.StandardUnits.CavalryI.toDamageGhost());
+			}
+		}
+		if (battleType === root.BattleType.Space && thisSideOptions.cavalryII){
+			result.push(root.StandardUnits.CavalryII);
+			if (!opponentMentakFlagship) {
+				result.push(root.StandardUnits.CavalryII.toDamageGhost());
+			}
+		}
 
-		var unitOrder = createUnitOrder(virusFlagship);
+		var unitOrder = createUnitOrder(virusFlagship, NaazRokhaMechsSpace, helTitan);
 		var naaluGoundUnitOrder = {};
 		naaluGoundUnitOrder[UnitType.Infantry] = 1;
 		naaluGoundUnitOrder[UnitType.Fighter] = 2;
+		naaluGoundUnitOrder[UnitType.Mech] = 0;
 		var comparer;
 		var vipGround;
+
 		if (naaluFlagship) {
 			// in case Fighters are stronger than Ground Forces, I'd like Ground Forces to die first, then sacrifice the
 			// Fighters. But, Fighters cannot take control of the planet, so I'd like to save one Ground Force
+			if ((thisSideCounters[UnitType.Mech] || { count: 0 }).count !== 0) {
+				vipGround = result.find(function (unit) { return unit.type === UnitType.Mech; });
+			} else {
 			vipGround = (thisSideCounters[UnitType.Fighter] || {}).upgraded &&
 				!(thisSideCounters[UnitType.Infantry] || {}).upgraded &&
 				result.find(function (unit) { return unit.type === UnitType.Infantry; });
+			}
 			comparer = naaluComparer;
 		} else if ((thisSideCounters[UnitType.Dreadnought] || {}).upgraded)
 			comparer = upgradedDreadnoughtsComparer;
@@ -786,6 +854,7 @@
 		result.sort(comparer);
 		if (battleType === root.BattleType.Space && thisSideOptions.experimentalBattlestation)
 			result.push(root.StandardUnits.ExperimentalBattlestation);
+
 		if (thisSideOptions.geoform)
 			result.push(root.StandardUnits.ExperimentalBattlestation);
 		result.comparer = comparer;
@@ -801,6 +870,7 @@
 				UnitType.Destroyer,
 				UnitType.Carrier,
 				UnitType.Fighter,
+				"Cavalry",
 			];
 		}
 
@@ -811,7 +881,7 @@
 			];
 		}
 
-		function createUnitOrder(virus) {
+		function createUnitOrder(virus, NaazRokhaMechsSpace, helTitan) {
 			var result = [];
 			var i = 0;
 			for (var unitType in UnitType) {
@@ -821,6 +891,22 @@
 				var tmp = result[UnitType.Infantry]; // Virus will need Grounds to die after Fighters, as they are stronger
 				result[UnitType.Infantry] = result[UnitType.Fighter];
 				result[UnitType.Fighter] = tmp;
+			}
+			if (helTitan) {
+				var tmp = result[UnitType.Infantry]; // Sustains Hel-Titans after Mechs and Infantry
+				result[UnitType.Infantry] = result[UnitType.PDS];
+				result[UnitType.PDS] = tmp;
+				var tmp = result[UnitType.PDS]; // Sustains Hel-Titans after Mechs and Infantry
+				result[UnitType.PDS] = result[UnitType.Mech];
+				result[UnitType.Mech] = tmp;
+			}
+			if (NaazRokhaMechsSpace) {
+				var tmp = result[UnitType.Mech]; // NRA will need Mechs to die after Fighters, as they are stronger
+				result[UnitType.Mech] = result[UnitType.Fighter];
+				result[UnitType.Fighter] = tmp;
+			}
+			if (thisSideOptions.cavalryI || thisSideOptions.cavalryII) {
+				result["Cavalry"] = 3
 			}
 			return result;
 		}
@@ -832,7 +918,7 @@
 			// Damaged units come _before_ undamaged ones (within one type of course), which means they die later,
 			// this way more Duranium armor has better chance to be applied.
 			var damagedOrder = (unit2.damaged ? 1 : 0) - (unit1.damaged ? 1 : 0);
-			if (thisSideOptions.riskDirectHit) {
+			if (thisSideOptions.riskDirectHit || battleType === root.BattleType.Ground) {
 				// means damage ghosts will come last
 				var defaultComparison = damageGhostOrder * 1000 + typeOrder * 10 + damagedOrder;
 				if (thisSideOptions.race !== root.Race.Letnev) {
@@ -867,6 +953,18 @@
 
 		function naaluComparer(unit1, unit2) {
 			var typeOrder = naaluGoundUnitOrder[unit1.type] - naaluGoundUnitOrder[unit2.type];
+			var damageGhostOrder = (unit1.isDamageGhost ? 1 : 0) - (unit2.isDamageGhost ? 1 : 0);
+			// Damaged units come _before_ undamaged ones (within one type of course), which means they die later,
+			// this way more Duranium armor has better chance to be applied.
+			var damagedOrder = (unit2.damaged ? 1 : 0) - (unit1.damaged ? 1 : 0);
+			var defaultComparison = damageGhostOrder * 1000 + typeOrder * 10 + damagedOrder;
+			// if (unit1.type === UnitType.Flagship && unit1.isDamageGhost) {
+			// 			return unit2.type === UnitType.Flagship && unit2.isDamageGhost ? 0 : 1;
+			// 		} else if (unit2.type === UnitType.Flagship && unit2.isDamageGhost) {
+			// 			return -1;
+			// 		} else {
+			// 			return defaultComparison;
+			// 		}
 			if (vipGround) {
 				// Fighters are stronger than Ground
 				if (unit1 === vipGround)
@@ -874,16 +972,16 @@
 				else if (unit2 === vipGround)
 					return 1;
 				else
-					return -typeOrder;
+					return defaultComparison;
 			} else {
-				return typeOrder;
+				return defaultComparison;
 			}
 		}
 
 		function filterFleet() {
 			var result = this.filter(function (unit) {
 				if (battleType === root.BattleType.Space)
-					return ships.indexOf(unit.type) >= 0 || virusFlagship && groundForces.indexOf(unit.type) >= 0;
+					return ships.indexOf(unit.type) >= 0 || virusFlagship && groundForces.indexOf(unit.type) >= 0 || NaazRokhaMechsSpace && unit.type === root.UnitType.Mech;
 				else //battleType === root.BattleType.Ground
 					return groundForces.indexOf(unit.type) >= 0 || helTitan && unit.type === root.UnitType.PDS || naaluFlagship && unit.type === root.UnitType.Fighter;
 			});

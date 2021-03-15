@@ -59,7 +59,11 @@
 						self.options.defender.race === Race.L1Z1X && self.defenderUnits.Flagship.count !== 0;
 					var letnevFlagship = self.options.attacker.race === Race.Letnev && self.attackerUnits.Flagship.count !== 0 ||
 						self.options.defender.race === Race.Letnev && self.defenderUnits.Flagship.count !== 0;
-					if ((duraniumArmor || l1z1xFlagship || letnevFlagship) && self.battleType === BattleType.Space || self.forceSlow)
+					var sardakkMech = (self.options.attacker.race === Race.Sardakk && self.attackerUnits.Mech.count !== 0 ||
+						self.options.defender.race === Race.Sardakk && self.defenderUnits.Mech.count !== 0) && !(self.options.attacker.articlesOfWar || self.options.defender.articlesOfWar);
+					var raidFormation = (self.options.attacker.race === Race.Argent && (self.attackerUnits.Destroyer.count !== 0 || self.options.attacker.cavalryI || self.options.attacker.cavalryII)) ||
+						(self.options.defender.race === Race.Argent && (self.defenderUnits.Destroyer.count !== 0 || self.options.defender.cavalryI || self.options.defender.cavalryII));
+					if (( l1z1xFlagship || letnevFlagship || raidFormation) && self.battleType === BattleType.Space || duraniumArmor || self.forceSlow || sardakkMech && self.battleType === BattleType.Ground)
 						lastComputed = imitator.estimateProbabilities(self);
 					else
 						lastComputed = calculator.computeProbabilities(self);

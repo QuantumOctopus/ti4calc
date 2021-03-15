@@ -24,6 +24,18 @@
 			var options = input.options || { attacker: {}, defender: {} };
 
 			options = options || { attacker: {}, defender: {} };
+			var atkArgentFlagship = battleType === root.BattleType.Space && options.attacker.race === root.Race.Argent && (input[root.SideUnits[game.BattleSide.attacker]][UnitType.Flagship] || { count: 0 }).count !== 0;
+			var defArgentFlagship = battleType === root.BattleType.Space && options.defender.race === root.Race.Argent && (input[root.SideUnits[game.BattleSide.defender]][UnitType.Flagship] || { count: 0 }).count !== 0;
+			if (atkArgentFlagship) {
+				options.attacker.argentFlagship = true;
+				options.defender.argentFlagship = false;
+			} else if (defArgentFlagship) {
+				options.defender.argentFlagship = true;
+				options.attacker.argentFlagship = false;
+			} else {
+				options.attacker.argentFlagship = false;
+				options.defender.argentFlagship = false;
+			}
 
 			var result = new structs.EmpiricalDistribution();
 			var finalAttacker = game.expandFleet(input, game.BattleSide.attacker).filterForBattle()
@@ -76,6 +88,10 @@
 		function imitateBattle(attackerFull, defenderFull, battleType, options) {
 			var attacker = attackerFull.filterForBattle();
 			var defender = defenderFull.filterForBattle();
+			options.attacker.raidFormation = options.attacker.race === root.Race.Argent && (attackerFull.some(unitIs(game.UnitType.Destroyer)) || options.attacker.cavalryI || options.attacker.cavalryII);
+			options.defender.raidFormation = options.defender.race === root.Race.Argent && (defenderFull.some(unitIs(game.UnitType.Destroyer)) || options.defender.cavalryI || options.defender.cavalryII);
+			options.attacker.SardakkMech = (options.attacker.race === root.Race.Sardakk && attackerFull.some(unitIs(game.UnitType.Mech))) && !(options.attacker.articlesOfWar || options.defender.articlesOfWar);
+			options.defender.SardakkMech = (options.defender.race === root.Race.Sardakk && defenderFull.some(unitIs(game.UnitType.Mech))) && !(options.attacker.articlesOfWar || options.defender.articlesOfWar);
 
 			var doAtLeastOneRound = false;
 			var actions = prebattleActions;
@@ -117,7 +133,11 @@
 				// Naalu Fighters are considered to be vulnerable to Magen Omega.
 				// Also, I don't try to be clever with which Naalu unit will be killed, GF of a Fighter, even though it's defencers choice
 				// https://www.reddit.com/r/twilightimperium/comments/g82tk6/ground_combat_when_one_side_didnt_come/
-				applyDamage(attacker, 1, options.attacker);
+				if (options.attacker.SardakkMech) {
+					applyDamageSardakkMechs(attacker, 1, options.attacker, defender, options.defender);
+				} else {
+					applyDamage(attacker, 1, options.attacker);
+				}
 			}
 
 			while (hasUnits(attacker) && hasUnits(defender) || (doAtLeastOneRound && round === 0)) {
@@ -132,7 +152,16 @@
 				var defenderBoost = boost(battleType, round, options.defender, defender, options.attacker);
 				var attackerReroll = false;
 				var defenderReroll = false;
+				var extraDie = (options.attacker.evelynDeLouis || options.attacker.viscountUnlenn || options.defender.evelynDeLouis || options.defender.viscountUnlenn);
+
 				if (round === 1) {
+					if (extraDie){
+						if (options.attacker.evelynDeLouis && battleType === game.BattleType.Ground || options.attacker.viscountUnlenn && battleType === game.BattleType.Space){
+							adjustUnitWithLowest(attacker, 'battleValue', true);
+						} else if (options.defender.evelynDeLouis && battleType === game.BattleType.Ground || options.defender.viscountUnlenn && battleType === game.BattleType.Space) {
+							adjustUnitWithLowest(defender, 'battleValue', true);
+						}
+					}
 					attackerReroll = options.attacker.fireTeam && battleType === game.BattleType.Ground ||
 						options.attacker.letnevMunitionsFunding && battleType === game.BattleType.Space;
 					defenderReroll = options.defender.fireTeam && battleType === game.BattleType.Ground ||
@@ -176,8 +205,27 @@
 					defenderInflictedToEverything += defenderAdditional;
 				}
 
-				var attackerYinFlagshipDied = applyDamage(attacker, defenderInflictedToNonFighters, options.attacker, null, notFighter) || applyDamage(attacker, defenderInflictedToEverything, options.attacker);
-				var defenderYinFlagshipDied = applyDamage(defender, attackerInflictedToNonFighters, options.defender, null, notFighter) || applyDamage(defender, attackerInflictedToEverything, options.defender);
+				if (extraDie && round === 1){
+					if (options.attacker.evelynDeLouis && battleType === game.BattleType.Ground || options.attacker.viscountUnlenn && battleType === game.BattleType.Space){
+						adjustUnitWithLowest(attacker, 'battleValue', false);
+					} else if (options.defender.evelynDeLouis && battleType === game.BattleType.Ground || options.defender.viscountUnlenn && battleType === game.BattleType.Space) {
+						adjustUnitWithLowest(defender, 'battleValue', false);
+					}
+				}
+
+				if (battleType === game.BattleType.Ground){
+					if (!(options.attacker.articlesOfWar || options.defender.articlesOfWar)) {
+						applyDamageSardakkMechs(attacker, defenderInflictedToEverything, options.attacker, defender, options.defender);
+						applyDamageSardakkMechs(defender, attackerInflictedToEverything, options.defender, attacker, options.attacker);
+					} else {
+						applyDamage(attacker, defenderInflictedToEverything, options.attacker);
+						applyDamage(defender, attackerInflictedToEverything, options.defender);
+					}
+				} else {
+					var attackerYinFlagshipDied = applyDamage(attacker, defenderInflictedToNonFighters, options.attacker, null, notFighter) || applyDamage(attacker, defenderInflictedToEverything, options.attacker);
+					var defenderYinFlagshipDied = applyDamage(defender, attackerInflictedToNonFighters, options.defender, null, notFighter) || applyDamage(defender, attackerInflictedToEverything, options.defender);
+				}
+
 				if (attackerYinFlagshipDied || defenderYinFlagshipDied) {
 					attacker.splice(0);
 					defender.splice(0);
@@ -216,6 +264,18 @@
 					attacker.splice(0);
 					defender.splice(0);
 					break;
+				}
+
+				function adjustUnitWithLowest(fleet, property, increase) {
+					var result = null;
+					var bestBattleValue = Infinity;
+					for (var i = 0; i < fleet.length; i++) {
+						if (fleet[i][property] < bestBattleValue) {
+							result = fleet[i];
+							bestBattleValue = fleet[i][property];
+						}
+					}
+					result.battleDice = increase ? result.battleDice + 1 : result.battleDice - 1;
 				}
 			}
 
@@ -319,6 +379,55 @@
 			}
 		}
 
+		/** applies damage for ground combat to one side, then assigns Sardakk mech damage to the other */
+		function applyDamageSardakkMechs(fleet, hits, sideOptions, opponentFleet, opponentSideOptions) {
+			var sardakkMechsDamaged = 0;
+
+			for (var i = fleet.length - 1; 0 <= i && 0 < hits; i--) {
+				var killed = hit(i);
+			}
+
+			applyDamage(opponentFleet, sardakkMechsDamaged, opponentSideOptions);
+
+			return false;
+
+			function hit(i) {
+				var killed = fleet.splice(i, 1)[0];
+				if (killed.isDamageGhost) {
+					if (sideOptions.race === root.Race.Sardakk){
+						sardakkMechsDamaged++;
+					}
+					killed.damageCorporeal.damaged = true;
+					killed.damageCorporeal.damagedThisRound = true;
+					if (sideOptions.nonEuclidean)
+						hits--;
+				}
+				hits--;
+				return killed;
+			}
+		}
+
+		function applyRaidFormation(hits, fleet) {
+			var numFighters = 0;
+			for (var i = 0; i < fleet.length; i++) {
+				if (fleet[i].type === UnitType.Fighter) {
+					numFighters++;
+				}
+			}
+			var numRaided = hits - numFighters;
+			if (numRaided > 0) {
+				for (var i = 0; i < fleet.length && 0 < numRaided; i++) {
+					if (fleet[i].isDamageGhost){
+						fleet[i].damageCorporeal.damaged = true;
+						fleet[i].damageCorporeal.damagedThisRound = true;
+						var killed = fleet.splice(i,1)[0];
+						i--;
+						numRaided--;
+					}
+				}
+			}
+		}
+
 		function rollDice(fleet, throwType, modifier, reroll) {
 			modifier = modifier || 0;
 			var totalRoll = 0;
@@ -363,15 +472,31 @@
 					execute: function (attacker, defender, attackerFull, defenderFull, options) {
 						var attackerModifier = options.defender.antimassDeflectors ? -1 : 0;
 						var attackerInflicted = rollDice(attackerFull.filter(hasSpaceCannon), game.ThrowType.SpaceCannon, attackerModifier);
-						if (options.attacker.plasmaScoring) {
-							attackerInflicted += fromPlasmaScoring(attackerFull, game.ThrowType.SpaceCannon, attackerModifier);
+						
+						var atkPSDice = options.attacker.plasmaScoring ? 1 : 0;
+						var atkArgentDice =  options.attacker.trrakanAunZulok ? 1 : 0;
+						var atkArgentPromDice = options.attacker.strikeWingAmbuscade ? 1 : 0;
+						var atkBonusDice = atkPSDice + atkArgentDice + atkArgentPromDice;							
+						if (atkBonusDice > 0) {
+							attackerInflicted += FromExtraDice(attackerFull, game.ThrowType.SpaceCannon, attackerModifier, atkBonusDice);
 						}
 
 						var defenderModifier = options.attacker.antimassDeflectors ? -1 : 0;
 						var defenderInflicted = rollDice(defenderFull.filter(hasSpaceCannon), game.ThrowType.SpaceCannon, defenderModifier);
-						if (options.defender.plasmaScoring) {
-							defenderInflicted += fromPlasmaScoring(defenderFull, game.ThrowType.SpaceCannon, defenderModifier);
+
+						var defPSDice = options.defender.plasmaScoring ? 1 : 0;
+						var defArgentDice =  options.defender.trrakanAunZulok ? 1 : 0;
+						var defArgentPromDice = options.defender.strikeWingAmbuscade ? 1 : 0;
+						var defBonusDice = defPSDice + defArgentDice + defArgentPromDice;							
+						if (defBonusDice > 0) {
+							defenderInflicted += FromExtraDice(defenderFull, game.ThrowType.SpaceCannon, defenderModifier, defBonusDice);
 						}
+						if (options.attacker.argentFlagship) {
+							defenderInflicted = 0;
+						} else if (options.defender.argentFlagship) {
+							attackerInflicted = 0;
+						}
+
 						if (options.attacker.maneuveringJets && defenderInflicted > 0)
 							defenderInflicted--;
 						if (options.defender.maneuveringJets && attackerInflicted > 0)
@@ -487,10 +612,38 @@
 
 						var attackerBarrageUnits = attacker.filter(hasBarrage);
 						var defenderBarrageUnits = defender.filter(hasBarrage);
+
+						var defArgentDice =  options.defender.trrakanAunZulok ? 1 : 0;
+						var defArgentPromDice = options.defender.strikeWingAmbuscade ? 1 : 0;
+						var defBonusDice = defArgentDice + defArgentPromDice;
+						var atkArgentDice =  options.attacker.trrakanAunZulok ? 1 : 0;
+						var atkArgentPromDice = options.attacker.strikeWingAmbuscade ? 1 : 0;
+						var atkBonusDice = atkArgentDice + atkArgentPromDice;
+
 						var attackerInflicted = rollDice(attackerBarrageUnits, game.ThrowType.Barrage);
 						var defenderInflicted = rollDice(defenderBarrageUnits, game.ThrowType.Barrage);
-						applyDamage(attacker, defenderInflicted, options.attacker, unitIs(game.UnitType.Fighter));
-						applyDamage(defender, attackerInflicted, options.defender, unitIs(game.UnitType.Fighter));
+						if (atkBonusDice > 0) {
+							attackerInflicted += FromExtraDice(attackerFull, game.ThrowType.Barrage, 0, atkBonusDice);
+						}
+						if (defBonusDice > 0) {
+							defenderInflicted += FromExtraDice(defenderFull, game.ThrowType.Barrage, 0, defBonusDice);
+						}
+						if (options.attacker.raidFormation){
+							applyRaidFormation(attackerInflicted, defender)
+						} else if (options.attacker.raidFormation) {
+							applyRaidFormation(defenderInflicted, attacker)
+						}
+
+						if (options.attacker.waylay){
+							applyDamage(attacker, defenderInflicted, options.attacker, unitIs(game.UnitType.Fighter));
+							applyDamage(defender, attackerInflicted, options.defender);
+						} else if (options.defender.waylay){
+							applyDamage(attacker, defenderInflicted, options.attacker)
+							applyDamage(defender, attackerInflicted, options.defender, unitIs(game.UnitType.Fighter));
+						} else {
+							applyDamage(attacker, defenderInflicted, options.attacker, unitIs(game.UnitType.Fighter));
+							applyDamage(defender, attackerInflicted, options.defender, unitIs(game.UnitType.Fighter));
+						}
 
 						function hasBarrage(unit) {
 							return unit.barrageDice !== 0;
@@ -510,8 +663,13 @@
 
 						var attackerModifier = options.defender.bunker ? -4 : 0;
 						var attackerInflicted = rollDice(attackerFull.filter(hasBombardment), game.ThrowType.Bombardment, attackerModifier);
-						if (options.attacker.plasmaScoring) {
-							attackerInflicted += fromPlasmaScoring(attackerFull, game.ThrowType.Bombardment, attackerModifier);
+						
+						var numPSDice = options.defender.plasmaScoring ? 1 : 0;
+						var numArgentDice =  options.defender.trrakanAunZulok ? 1 : 0;
+						var numArgentPromDice = options.defender.strikeWingAmbuscade ? 1 : 0;
+						var numBonusDice = numPSDice + numArgentDice + numArgentPromDice;
+						if (numBonusDice > 0) {
+							attackerInflicted += FromExtraDice(attackerFull, game.ThrowType.Bombardment, attackerModifier, numBonusDice);
 						}
 
 						if (options.attacker.x89Omega && attackerInflicted > 0) {
@@ -537,8 +695,12 @@
 						var defenderModifier = options.attacker.antimassDeflectors ? -1 : 0;
 						var defenderInflicted = rollDice(defenderFull.filter(unitIs(game.UnitType.PDS)), game.ThrowType.SpaceCannon, defenderModifier);
 
-						if (options.defender.plasmaScoring) {
-							defenderInflicted += fromPlasmaScoring(defenderFull.filter(unitIs(game.UnitType.PDS)), game.ThrowType.SpaceCannon, defenderModifier);
+						var numPSDice = options.defender.plasmaScoring ? 1 : 0;
+						var numArgentDice =  options.defender.trrakanAunZulok ? 1 : 0;
+						var numArgentPromDice = options.defender.strikeWingAmbuscade ? 1 : 0;
+						var numBonusDice = numPSDice + numArgentDice + numArgentPromDice;
+						if (numBonusDice > 0) {
+							defenderInflicted += FromExtraDice(defenderFull.filter(unitIs(game.UnitType.PDS)), game.ThrowType.SpaceCannon, defenderModifier, numBonusDice);
 						}
 						if (options.attacker.maneuveringJets && defenderInflicted > 0)
 							defenderInflicted--;
@@ -560,11 +722,11 @@
 				return result;
 			}
 
-			function fromPlasmaScoring(fleet, throwType, modifier) {
+			function fromExtraDice(fleet, throwType, modifier, extraDice) {
 				var bestUnit = getUnitWithLowest(fleet, game.ThrowValues[throwType]);
 				if (bestUnit) {
 					var unitWithOneDie = bestUnit.clone();
-					unitWithOneDie[game.ThrowDice[throwType]] = 1;
+					unitWithOneDie[game.ThrowDice[throwType]] = extraDice;
 					return rollDice([unitWithOneDie], throwType, modifier);
 				}
 				return 0;
@@ -658,6 +820,63 @@
 					name: 'tekklarLegion of the opponent',
 					apply: function (battleType, round, sideOptions, fleet, opponentOptions) {
 						return battleType === game.BattleType.Ground && opponentOptions.tekklarLegion && sideOptions.race === game.Race.Sardakk ? -1 : 0;
+					}
+				},
+				{
+					name: 'nebula',
+					apply: function (battleType, sideOptions) {
+						return battleType === game.BattleType.Space && sideOptions.nebula ? 1 : 0;
+					}
+				},
+				{
+					name: 'iconoclast',
+					apply: function (battleType, sideOptions) {
+						return battleType === game.BattleType.Ground && (sideOptions.iconoclast && !(sideOptions.articlesOfWar || opponentOptions.articlesOfWar)) ?
+							function (unit) {
+								return unit.type === game.UnitType.Mech ? 2 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'mordred',
+					apply: function (battleType, sideOptions) {
+						return (sideOptions.mordred && !(sideOptions.articlesOfWar || opponentOptions.articlesOfWar)) ?
+							function (unit) {
+								return unit.type === game.UnitType.Mech ? 2 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'rickar',
+					apply: function (battleType, sideOptions) {
+						return sideOptions.rickar ? 2 : 0;
+					}
+				},
+				{
+					name: 'Shield Paling',
+					apply: function (battleType, sideOptions, opponentOptions, fleet) {
+						// Unit reordering, where the Flagship is not the first is not taken into account
+						// Several Flagships not taken into account
+						return sideOptions.race === game.Race.JolNar && battleType === game.BattleType.Ground && !(sideOptions.articlesOfWar || opponentOptions.articlesOfWar) &&
+						fleet.some(unitIs(game.UnitType.Mech)) ?
+							function (unit) {
+								return unit.type == game.UnitType.Infantry ? 1 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'needOpponentToken',
+					apply: function (battleType, sideOptions) {
+						return sideOptions.race === game.Race.Mahact && battleType === game.BattleType.Space && sideOptions.needOpponentToken ?
+							function (unit) {
+								return unit.type === game.UnitType.Flagship ? 2 : 0;
+							} : 0;
+					}
+				},
+				{
+					name: 'superCharge',
+					apply: function (battleType, sideOptions) {
+						return round === 1 && sideOptions.superCharge ? 1 : 0;
 					}
 				},
 			];
